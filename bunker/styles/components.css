@@ -1,0 +1,437 @@
+/* ============================================================
+   КОМПОНЕНТЫ
+   Каждый блок самодостаточен и не зависит от экрана,
+   на котором используется.
+   ============================================================ */
+
+/* --- Стеклянная панель ------------------------------------- */
+.panel {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-brd);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3), var(--sh-inset);
+}
+.panel--tight { border-radius: var(--r-md); }
+
+/* Верхняя световая кромка — как отблеск лампы на стали */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,179,71,.5) 20%, rgba(255,255,255,.3) 50%,
+    rgba(255,179,71,.5) 80%, transparent);
+  opacity: .6;
+  border-radius: inherit;
+}
+
+/* --- Кнопки ------------------------------------------------ */
+.btn {
+  --btn-accent: var(--c-amber);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 48px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: var(--glass-bg-hi);
+  color: var(--t-primary);
+  font-family: var(--f-display);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform var(--d-fast) var(--e-out),
+    border-color var(--d-base) var(--e-out),
+    box-shadow var(--d-base) var(--e-out),
+    color var(--d-base) var(--e-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Свет, пробегающий по кнопке при наведении */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg,
+    transparent 30%,
+    color-mix(in srgb, var(--btn-accent) 22%, transparent) 50%,
+    transparent 70%);
+  transform: translateX(-120%);
+  transition: transform var(--d-slow) var(--e-out);
+}
+.btn:hover::after { transform: translateX(120%); }
+
+.btn:hover {
+  border-color: color-mix(in srgb, var(--btn-accent) 45%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--btn-accent) 22%, transparent);
+  transform: translateY(-2px);
+}
+.btn:active { transform: translateY(0) scale(.985); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+
+.btn--primary {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--c-amber-hot) 26%, transparent),
+    color-mix(in srgb, var(--c-orange) 12%, transparent));
+  border-color: rgba(255,179,71,.4);
+  color: #fff;
+  box-shadow: var(--glow-amber), var(--sh-2);
+}
+.btn--danger  { --btn-accent: var(--c-alarm); }
+.btn--danger:hover { color: #ffd9d6; }
+.btn--cool    { --btn-accent: var(--c-cyan); }
+.btn--ghost   { background: transparent; border-color: transparent; color: var(--t-secondary); }
+.btn--ghost:hover { color: var(--t-primary); box-shadow: none; }
+.btn--sm { min-height: 38px; padding: 0 var(--s-4); font-size: var(--fs-sm); }
+.btn--block { width: 100%; }
+
+.btn__icon { display: grid; place-items: center; width: 20px; height: 20px; flex: none; }
+.btn__icon svg { width: 100%; height: 100%; }
+
+/* Кнопки главного меню — крупные, с номером слота и стрелкой */
+.btn--menu {
+  justify-content: flex-start;
+  min-height: 62px;
+  padding: 0 var(--s-5);
+  gap: var(--s-4);
+  font-size: var(--fs-lg);
+  border-radius: var(--r-md);
+}
+.btn--menu .btn__slot {
+  font-family: var(--f-mono);
+  font-size: var(--fs-xxs);
+  letter-spacing: .12em;
+  color: var(--t-dim);
+  transition: color var(--d-base) var(--e-out);
+}
+.btn--menu:hover .btn__slot { color: var(--btn-accent); }
+.btn--menu .btn__arrow {
+  margin-left: auto;
+  color: var(--t-dim);
+  transition: transform var(--d-base) var(--e-back), color var(--d-base) var(--e-out);
+}
+.btn--menu:hover .btn__arrow { transform: translateX(5px); color: var(--btn-accent); }
+
+/* --- Поля ввода -------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: var(--s-2); }
+.field__label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-xxs);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--t-muted);
+}
+.input {
+  min-height: 50px;
+  padding: 0 var(--s-4);
+  background: rgba(6,8,12,.55);
+  border: 1px solid var(--glass-brd);
+  border-radius: var(--r-sm);
+  color: var(--t-primary);
+  transition: border-color var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out);
+}
+.input::placeholder { color: var(--t-dim); }
+.input:focus-visible {
+  border-color: rgba(255,179,71,.55);
+  box-shadow: var(--glow-amber);
+  outline: none;
+}
+
+/* Поле кода комнаты — крупный моноширинный шрифт с разрядкой */
+.input--code {
+  font-family: var(--f-mono);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: .5em;
+  text-align: center;
+  text-indent: .5em;
+  text-transform: uppercase;
+  min-height: 72px;
+}
+
+.switch {
+  position: relative;
+  width: 52px; height: 30px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: rgba(6,8,12,.7);
+  border: 1px solid var(--glass-brd);
+  transition: background var(--d-base) var(--e-out), border-color var(--d-base) var(--e-out);
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--t-muted);
+  transition: transform var(--d-base) var(--e-back), background var(--d-base) var(--e-out);
+}
+.switch[aria-checked='true'] {
+  background: color-mix(in srgb, var(--c-amber-hot) 28%, transparent);
+  border-color: rgba(255,179,71,.5);
+}
+.switch[aria-checked='true']::after {
+  transform: translateX(22px);
+  background: var(--c-amber);
+  box-shadow: 0 0 12px var(--c-amber-hot);
+}
+
+/* --- Бейджи и метки ---------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 4px var(--s-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--glass-brd);
+  background: rgba(6,8,12,.5);
+  font-family: var(--f-mono);
+  font-size: var(--fs-xxs);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--t-secondary);
+  white-space: nowrap;
+}
+.badge--amber { border-color: rgba(255,179,71,.4); color: var(--c-amber); }
+.badge--alarm { border-color: rgba(255,59,48,.45); color: #ff8078; }
+.badge--cyan  { border-color: rgba(77,208,255,.4); color: var(--c-cyan); }
+.badge--host  { border-color: rgba(255,179,71,.45); color: var(--c-amber); }
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--c-cyan);
+  box-shadow: 0 0 8px currentColor;
+  flex: none;
+}
+.dot--live  { background: #35d07f; animation: dot-pulse 2s var(--e-inout) infinite; }
+.dot--idle  { background: var(--t-dim); box-shadow: none; }
+.dot--gone  { background: var(--c-alarm); }
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .45; transform: scale(.82); }
+}
+
+/* --- Карточка характеристики ------------------------------- */
+.trait {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 74px;
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--glass-brd);
+  background: rgba(10,13,18,.6);
+  text-align: left;
+  overflow: hidden;
+  transition: border-color var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out), transform var(--d-fast) var(--e-out);
+}
+.trait__key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--f-mono);
+  font-size: var(--fs-xxs);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--t-muted);
+}
+.trait__key svg { width: 13px; height: 13px; flex: none; }
+.trait__val {
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--t-primary);
+  overflow-wrap: anywhere;
+}
+
+/* Скрытая характеристика — «засекречено» */
+.trait--hidden .trait__val {
+  color: var(--t-dim);
+  font-family: var(--f-mono);
+  letter-spacing: .1em;
+}
+.trait--hidden::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg,
+    rgba(255,255,255,.02) 0 6px, transparent 6px 12px);
+  pointer-events: none;
+}
+
+/* Своя скрытая характеристика — можно раскрыть, значит кликабельна */
+.trait--actionable { cursor: pointer; }
+.trait--actionable:hover {
+  border-color: rgba(255,179,71,.5);
+  box-shadow: var(--glow-amber);
+  transform: translateY(-2px);
+}
+.trait--revealed {
+  border-color: rgba(255,179,71,.28);
+  background: linear-gradient(180deg, rgba(255,138,31,.09), rgba(10,13,18,.6));
+}
+.trait--special .trait__key { color: var(--c-cyan); }
+.trait--special.trait--revealed {
+  border-color: rgba(77,208,255,.35);
+  background: linear-gradient(180deg, rgba(77,208,255,.10), rgba(10,13,18,.6));
+}
+
+/* --- Карточка игрока --------------------------------------- */
+.pcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--sh-2);
+  overflow: hidden;
+  transition: border-color var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out), opacity var(--d-slow) var(--e-out);
+}
+.pcard--self { border-color: rgba(255,179,71,.38); box-shadow: var(--glow-amber), var(--sh-2); }
+.pcard--turn { border-color: rgba(77,208,255,.5); box-shadow: var(--glow-cyan), var(--sh-2); }
+.pcard--out  { opacity: .38; filter: grayscale(.75); }
+.pcard--out .pcard__head::after {
+  content: 'ИЗГНАН';
+  position: absolute;
+  right: var(--s-3);
+  top: 50%;
+  transform: translateY(-50%) rotate(-6deg);
+  font-family: var(--f-display);
+  font-size: var(--fs-sm);
+  letter-spacing: .2em;
+  color: var(--c-alarm);
+  border: 1px solid var(--c-alarm);
+  border-radius: var(--r-xs);
+  padding: 2px 8px;
+}
+
+.pcard__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), transparent);
+  border-bottom: 1px solid var(--glass-brd);
+}
+.pcard__avatar {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  flex: none;
+  border-radius: var(--r-sm);
+  background: linear-gradient(145deg, var(--c-steel-2), var(--c-graphite));
+  border: 1px solid var(--glass-brd);
+  font-family: var(--f-display);
+  font-size: var(--fs-md);
+  color: var(--c-amber);
+}
+.pcard__name {
+  font-family: var(--f-display);
+  font-size: var(--fs-md);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pcard__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pcard__sub { font-size: var(--fs-xxs); color: var(--t-muted); font-family: var(--f-mono); }
+
+.pcard__traits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  padding: var(--s-3);
+}
+.pcard__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-top: 1px solid var(--glass-brd);
+  margin-top: auto;
+}
+
+/* --- Полоса ресурса бункера -------------------------------- */
+.res {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+}
+.res__icon {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; flex: none;
+  border-radius: var(--r-xs);
+  background: rgba(255,138,31,.10);
+  border: 1px solid rgba(255,179,71,.2);
+  color: var(--c-amber);
+}
+.res__icon svg { width: 16px; height: 16px; }
+.res__body { flex: 1; min-width: 0; }
+.res__row { display: flex; justify-content: space-between; gap: var(--s-3); align-items: baseline; }
+.res__name { font-size: var(--fs-sm); color: var(--t-secondary); }
+.res__val { font-family: var(--f-mono); font-size: var(--fs-xs); color: var(--t-primary); }
+.res__bar {
+  height: 3px;
+  margin-top: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,.07);
+  overflow: hidden;
+}
+.res__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c-orange), var(--c-amber));
+  box-shadow: 0 0 10px rgba(255,138,31,.6);
+  transform-origin: left;
+  animation: bar-grow var(--d-slow) var(--e-out) both;
+}
+@keyframes bar-grow { from { transform: scaleX(0); } }
+
+/* --- Разделитель-шов --------------------------------------- */
+.seam {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-brd) 15%, var(--glass-brd) 85%, transparent);
+  border: 0;
+  margin: var(--s-5) 0;
+}
+
+/* --- Пустое состояние -------------------------------------- */
+.empty {
+  display: grid;
+  place-items: center;
+  gap: var(--s-3);
+  padding: var(--s-7) var(--s-4);
+  text-align: center;
+  color: var(--t-muted);
+}
+.empty__title { font-family: var(--f-display); font-size: var(--fs-lg); color: var(--t-secondary); }
+
+/* Отметки в шапке карточки игрока */
+.pcard__marks {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+  flex: none;
+}
+.pcard__marks .badge svg { width: 12px; height: 12px; }
