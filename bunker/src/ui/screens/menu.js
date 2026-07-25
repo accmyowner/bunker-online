@@ -6,6 +6,7 @@ import { el, stagger } from '../../core/dom.js';
 import { emit, EV } from '../../core/bus.js';
 import { icon } from '../components/icons.js';
 import { prompt, modal } from '../components/modal.js';
+import { mountDiscordBadge } from '../components/discord.js';
 import { go } from '../router.js';
 import * as room from '../../net/room.js';
 import { play } from '../../audio/sfx.js';
@@ -147,5 +148,12 @@ export function menuScreen() {
     menuButton({ slot: '05', label: 'Настройки', iconName: 'gear', onClick: () => go('settings') })
   ]));
 
-  return el('div.menu', null, [hero, nav]);
+  const screen = el('div.menu', null, [hero, nav]);
+
+  // Значок Discord живёт только на главном меню: монтируется в body
+  // и снимается роутером при уходе с экрана
+  const unmountDiscord = mountDiscordBadge();
+  screen.cleanup = unmountDiscord;
+
+  return screen;
 }

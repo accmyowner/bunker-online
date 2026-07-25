@@ -170,3 +170,28 @@
   .btn:active { transform: scale(.97); }
   .trait--actionable:hover { transform: none; }
 }
+
+/* ---------- ЗНАЧОК DISCORD НА ТЕЛЕФОНЕ -------------------- */
+@media (max-width: 720px) {
+  /* Поднимаем значок над нижней навигацией */
+  .dsc {
+    right: calc(var(--s-4) + var(--sa-r));
+    bottom: calc(70px + var(--sa-b));
+    width: 42px;
+    height: 42px;
+  }
+  .dsc__icon { width: 20px; height: 20px; }
+
+  /* Уведомления сдвигаем выше значка: на узком экране они
+     занимают почти всю ширину и иначе перекрыли бы его */
+  .toast-root { bottom: calc(126px + var(--sa-b)); }
+}
+
+/* На тач-устройствах наведения нет. Постоянно висящая подсказка
+   перекрывалась бы уведомлениями, поэтому показываем её только
+   на время нажатия — а результат действия и так сообщает уведомление */
+@media (hover: none) {
+  .dsc:hover { transform: none; }
+  .dsc:active { transform: scale(.94); }
+  .dsc:active .dsc__tip { opacity: 1; transform: translateY(0) scale(1); }
+}

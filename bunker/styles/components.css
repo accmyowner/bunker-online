@@ -274,11 +274,38 @@
 }
 
 /* Своя скрытая характеристика — можно раскрыть, значит кликабельна */
-.trait--actionable { cursor: pointer; }
+/* Кликабельная плитка: её нужно ЗАМЕТНО отличать от остальных,
+   иначе игрок не понимает, куда нажимать. Янтарная рамка, мягкое
+   свечение и пульсация притягивают взгляд к тому, что можно раскрыть. */
+.trait--actionable {
+  cursor: pointer;
+  border-color: rgba(255,179,71,.45);
+  background: linear-gradient(180deg, rgba(255,138,31,.10), rgba(10,13,18,.6));
+  animation: trait-invite 2.4s var(--e-inout) infinite;
+}
+@keyframes trait-invite {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,31,0); }
+  55%      { box-shadow: 0 0 0 3px rgba(255,138,31,.14), var(--glow-amber); }
+}
+
+/* Уголок-подсказка «нажми, чтобы раскрыть» */
+.trait--actionable::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-amber);
+  box-shadow: 0 0 8px var(--c-amber-hot);
+}
+
 .trait--actionable:hover {
-  border-color: rgba(255,179,71,.5);
+  border-color: rgba(255,179,71,.8);
   box-shadow: var(--glow-amber);
   transform: translateY(-2px);
+  animation: none;
 }
 .trait--revealed {
   border-color: rgba(255,179,71,.28);
@@ -435,3 +462,101 @@
   flex: none;
 }
 .pcard__marks .badge svg { width: 12px; height: 12px; }
+
+/* --- Значок Discord ---------------------------------------- */
+.dsc {
+  /* Фирменный цвет Discord держим локально: палитра игры в tokens.css
+     описывает саму игру, а не бренды третьих сторон */
+  --dsc-brand: #5865f2;
+
+  position: fixed;
+  right: calc(var(--s-5) + var(--sa-r));
+  bottom: calc(var(--s-5) + var(--sa-b));
+  z-index: var(--z-hud);
+
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  box-shadow: var(--sh-2), var(--sh-inset);
+  color: var(--t-muted);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--d-base) var(--e-out),
+    border-color var(--d-base) var(--e-out),
+    box-shadow var(--d-base) var(--e-out),
+    transform var(--d-fast) var(--e-out);
+}
+.dsc__icon { display: grid; place-items: center; width: 22px; height: 22px; }
+.dsc__icon svg { width: 100%; height: 100%; }
+
+.dsc:hover,
+.dsc:focus-visible {
+  color: #fff;
+  border-color: rgba(88, 101, 242, .55);
+  box-shadow: 0 0 0 1px rgba(88,101,242,.35), 0 0 26px rgba(88,101,242,.35), var(--sh-2);
+  transform: translateY(-3px);
+}
+.dsc:active { transform: translateY(-1px) scale(.96); }
+
+/* Подтверждение копирования — короткая янтарная вспышка */
+.dsc--copied {
+  color: var(--c-amber);
+  border-color: rgba(255,179,71,.6);
+  box-shadow: var(--glow-amber), var(--sh-2);
+}
+
+/* --- Подсказка над значком --------------------------------- */
+.dsc__tip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  padding: 8px var(--s-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--glass-brd);
+  background: var(--glass-bg-hi);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--sh-3);
+  font-family: var(--f-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: .04em;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+
+  opacity: 0;
+  transform: translateY(8px) scale(.94);
+  transform-origin: 88% 100%;
+  transition:
+    opacity var(--d-base) var(--e-out),
+    transform var(--d-base) var(--e-back);
+}
+.dsc__tipkey { color: var(--t-muted); }
+.dsc__tipval { color: var(--c-amber); }
+
+/* Хвостик подсказки — повёрнутый квадрат с теми же гранями */
+.dsc__tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 16px;
+  width: 9px;
+  height: 9px;
+  margin-top: -5px;
+  background: var(--glass-bg-hi);
+  border-right: 1px solid var(--glass-brd);
+  border-bottom: 1px solid var(--glass-brd);
+  transform: rotate(45deg);
+}
+
+.dsc:hover .dsc__tip,
+.dsc:focus-visible .dsc__tip {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}

@@ -11,31 +11,39 @@ import { TRAIT_ORDER, TRAIT_LABELS } from '../../data/traits.js';
 
 /**
  * Плитка одной характеристики.
- * Скрытая своя карта кликабельна, чужая — просто закрыта.
+ *
+ * Важно различать два независимых понятия:
+ *   visible     — вижу ли Я значение (свои карты видны всегда);
+ *   actionable  — могу ли я раскрыть эту карту остальным.
+ *
+ * Раньше их путали: своя карта была visible, из-за чего считалась
+ * «уже раскрытой» и переставала быть кликабельной. Теперь клик
+ * зависит только от actionable, а показ значения — только от visible.
  */
-export function traitTile({ key, value, revealed, actionable, onReveal }) {
+export function traitTile({ key, value, visible, actionable, onReveal }) {
   const classes = [
     'button.trait',
-    revealed ? 'trait--revealed' : 'trait--hidden',
+    visible ? 'trait--revealed' : 'trait--hidden',
     key === 'special' ? 'trait--special' : '',
-    actionable && !revealed ? 'trait--actionable' : ''
+    actionable ? 'trait--actionable' : ''
   ].filter(Boolean).join('.');
 
   const tile = el(classes, {
     type: 'button',
-    disabled: !(actionable && !revealed),
+    disabled: !actionable,
     'data-key': key,
     'data-silent': true,
-    'aria-label': `${TRAIT_LABELS[key]}: ${revealed ? value : 'засекречено'}`
+    'aria-label': `${TRAIT_LABELS[key]}: ${visible ? value : 'засекречено'}`
+        + (actionable ? '. Нажмите, чтобы раскрыть остальным' : '')
   }, [
     el('span.trait__key', null, [
       el('span', { html: icon(key) }),
       TRAIT_LABELS[key]
     ]),
-    el('span.trait__val', { text: revealed ? value : '— — — — —' })
+    el('span.trait__val', { text: visible ? value : '— — — — —' })
   ]);
 
-  if (actionable && !revealed && onReveal) {
+  if (actionable && onReveal) {
     tile.addEventListener('click', () => onReveal(key, tile));
   }
   return tile;
@@ -45,7 +53,9 @@ export function traitTile({ key, value, revealed, actionable, onReveal }) {
 export function animateReveal(tile, value) {
   tile.classList.add('trait--flip');
 
-  // Подменяем текст на середине переворота, когда плитка «ребром»
+  // Подменяем текст на середине переворота, когда плитка «ребром».
+  // Снимаем actionable — исчезают пульсация и точка-подсказка,
+  // карта становится обычной раскрытой плиткой.
   setTimeout(() => {
     tile.classList.remove('trait--hidden', 'trait--actionable');
     tile.classList.add('trait--revealed');
@@ -115,13 +125,14 @@ export function playerCard({
   /* --- Характеристики --- */
   const grid = el('div.pcard__traits');
   for (const key of TRAIT_ORDER) {
-    const revealed = mine || Boolean(revealedMap[key]);
+    const openedForAll = Boolean(revealedMap[key]);
     grid.append(traitTile({
       key,
       value: traits[key] || '—',
-      revealed,
-      // Открывать можно только свои и только пока есть норма раунда
-      actionable: mine && !revealedMap[key] && quotaLeft > 0 && !out,
+      // Своё значение вижу всегда; чужое — только если раскрыто всем
+      visible: mine || openedForAll,
+      // Раскрыть можно свою, ещё не раскрытую карту, пока есть норма раунда
+      actionable: mine && !openedForAll && quotaLeft > 0 && !out,
       onReveal
     }));
   }
