@@ -20,9 +20,24 @@ import {
 import { CATASTROPHE_BY_ID } from '../../data/catastrophes.js';
 
 /** Отправляет патч и мягко сообщает об отказе */
-async function send(result) {
-  if (!result.ok) {
-    emit(EV.TOAST, { text: result.reason || 'Действие недоступно', kind: 'err' });
+/**
+ * Отправляет ход в сеть.
+ *
+ * Ключевой момент: действие вычисляется НЕ от снимка, который был на
+ * экране в момент отрисовки, а от самого свежего состояния комнаты
+ * (room.current()). Иначе быстрые или одновременные ходы считают
+ * счётчики и смену фазы от устаревших данных, и у разных игроков
+ * состояние расходится — часть раскрытых карт «пропадает».
+ *
+ * Принимает либо готовый результат { ok, patch }, либо функцию
+ * (freshState) => результат, которой передаётся свежее состояние.
+ */
+async function send(action) {
+  const fresh = room.current();
+  const result = typeof action === 'function' ? action(fresh) : action;
+
+  if (!result || !result.ok) {
+    emit(EV.TOAST, { text: result?.reason || 'Действие недоступно', kind: 'err' });
     return false;
   }
   try {
@@ -186,7 +201,7 @@ function votePanel(state, refresh) {
       onClick: async () => {
         play('vote');
         button.classList.add('votebtn--cast');
-        const ok = await send(castVote(state, meId, id));
+        const ok = await send((fresh) => castVote(fresh, meId, id));
         if (!ok) button.classList.remove('votebtn--cast');
       }
     }, [
@@ -212,7 +227,7 @@ function votePanel(state, refresh) {
     stuck
       ? el('div.actionbar', null, [
           el('button.btn.btn--primary.btn--block', {
-            onClick: () => send(resolveVote(state))
+            onClick: () => send((fresh) => resolveVote(fresh))
           }, [el('span.btn__icon', { html: icon('vote') }), 'Подвести итог голосования'])
         ])
       : null
@@ -230,7 +245,7 @@ function resultPanel(state) {
   const button = el('button.btn.btn--primary.btn--block', {
     disabled: !host,
     'data-sfx': 'confirm',
-    onClick: () => send(nextRound(state))
+    onClick: () => send((fresh) => nextRound(fresh))
   }, [
     el('span.btn__icon', { html: icon(finished ? 'check' : 'arrow') }),
     finished ? 'Подвести итоги' : 'Следующий раунд'
@@ -396,10 +411,13 @@ export function gameScreen() {
         onReveal: async (key, tile) => {
           const value = game.chars[id].traits[key];
           play('card');
-          // Держим экран от перерисовки, пока идёт переворот жетона
-          holdUntil = Date.now() + 1000;
+          // Держим экран от перерисовки только на время переворота
+          // жетона. Дольше держать нельзя: за это время другой игрок
+          // может раскрыть карту, и она должна появиться сразу после
+          // окончания анимации, а не висеть скрытой лишнюю секунду.
+          holdUntil = Date.now() + 680;
           animateReveal(tile, value);
-          await send(reveal(state, id, key));
+          await send((fresh) => reveal(fresh, id, key));
         },
         footer: mine && game.phase === PHASES.REVEAL && quota > 0
           ? [el('span.badge.badge--amber', { text: `Открыть карт: ${quota}` })]
@@ -438,9 +456,13 @@ export function gameScreen() {
         allDone && host
           ? el('div.actionbar', null, [
               el('button.btn.btn--primary.btn--block', {
-                onClick: () => send({
-                  ok: true,
-                  patch: { 'game/phase': PHASES.DISCUSS }
+                onClick: () => send((fresh) => {
+                  // Перепроверяем на свежих данных: вдруг чей-то ход
+                  // пришёл уже после отрисовки этой кнопки
+                  if (!everyoneRevealed(fresh)) {
+                    return { ok: false, reason: 'Не все игроки раскрыли карты' };
+                  }
+                  return { ok: true, patch: { 'game/phase': PHASES.DISCUSS } };
                 })
               }, [el('span.btn__icon', { html: icon('arrow') }), 'Перейти к обсуждению'])
             ])
@@ -459,7 +481,7 @@ export function gameScreen() {
         el('div.actionbar', null, [
           el('button.btn.btn--primary.btn--block', {
             disabled: !host,
-            onClick: () => send(startVote(state))
+            onClick: () => send((fresh) => startVote(fresh))
           }, [el('span.btn__icon', { html: icon('vote') }), 'Открыть голосование']),
         ]),
         !host ? el('p.setting__desc', { text: 'Голосование открывает ведущий.' }) : null
