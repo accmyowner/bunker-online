@@ -16,7 +16,8 @@ import { play } from '../../audio/sfx.js';
 import {
   PHASES, PHASE_META, revealsLeft, alivePlayers, isAlive, voteCandidates, tally,
   everyoneRevealed, everyoneVoted, reveal, startVote, castVote, resolveVote, nextRound,
-  endTurn, onDeadline, activePlayer, isActiveTurn, turnOrder, secondsLeft, deadlinePassed
+  endTurn, onDeadline, activePlayer, isActiveTurn, turnOrder, secondsLeft, deadlinePassed,
+  advanceAfterDiscuss, revealDone
 } from '../../game/engine.js';
 import { CATASTROPHE_BY_ID } from '../../data/catastrophes.js';
 
@@ -269,8 +270,14 @@ function votePanel(state, refresh) {
   // могли не запустить подсчёт автоматически
   const stuck = everyoneVoted(state) && room.isHost(state);
 
+  // Сколько ещё нужно исключить в финальной серии
+  const toRemove = alivePlayers(state).length - game.bunker.seats;
+  const heading = game.candidates
+    ? 'Переголосование'
+    : `Финальное голосование · исключить ещё ${toRemove}`;
+
   return el('div.panel', { style: { padding: 'var(--s-5)' } }, [
-    el('div.eyebrow', { text: game.candidates ? 'Переголосование' : 'Голосование' }),
+    el('div.eyebrow', { text: heading }),
     el('p.brief__text', { text: note, style: { margin: 'var(--s-2) 0 var(--s-4)' } }),
     grid,
     stuck
@@ -296,20 +303,22 @@ function resultPanel(state) {
     'data-sfx': 'confirm',
     onClick: () => send((fresh) => nextRound(fresh))
   }, [
-    el('span.btn__icon', { html: icon(finished ? 'check' : 'arrow') }),
-    finished ? 'Подвести итоги' : 'Следующий раунд'
+    el('span.btn__icon', { html: icon(finished ? 'check' : 'vote') }),
+    finished ? 'Подвести итоги' : 'Следующее голосование'
   ]);
 
+  const toRemove = alive - game.bunker.seats;
+
   return el('div.panel', { style: { padding: 'var(--s-5)' } }, [
-    el('div.eyebrow', { text: 'Итог раунда' }),
+    el('div.eyebrow', { text: 'Итог голосования' }),
     el('h2.brief__name', { text: victim ? `${victim.name} остаётся снаружи` : 'Решение принято' }),
     el('p.brief__text', {
       text: finished
         ? 'Мест ровно столько, сколько людей. Гермозатвор можно закрывать.'
-        : `В игре осталось ${alive} человек, мест ${game.bunker.seats}. Продолжаем.`
+        : `В игре осталось ${alive} человек, мест ${game.bunker.seats}. Нужно исключить ещё ${toRemove}.`
     }),
     el('div', { style: { marginTop: 'var(--s-4)' } }, [button]),
-    !host ? el('p.setting__desc', { text: 'Раунд переключает ведущий.', style: { marginTop: 'var(--s-2)' } }) : null
+    !host ? el('p.setting__desc', { text: 'Дальше ведёт ведущий.', style: { marginTop: 'var(--s-2)' } }) : null
   ]);
 }
 
@@ -539,20 +548,27 @@ export function gameScreen() {
     }
 
     if (game.phase === PHASES.DISCUSS) {
+      const toFinal = revealDone(state);
       main.append(el('div.panel', { style: { padding: 'var(--s-5)' } }, [
         el('div.eyebrow', { text: 'Общее обсуждение' }),
         el('p.brief__text', {
-          text: 'Все высказались по своим картам. Обсудите, кто из игроков менее полезен убежищу. ' +
-                'Когда будете готовы, ведущий откроет голосование.',
+          text: toFinal
+            ? 'Все характеристики раскрыты. Обсудите, кто менее полезен убежищу — ' +
+              'дальше начнётся финальное голосование, где игроков исключают по одному до числа мест.'
+            : 'Все высказались по своим картам этого круга. Обсудите увиденное. ' +
+              'Дальше начнётся следующий раунд — каждый откроет ещё одну характеристику.',
           style: { margin: 'var(--s-2) 0 var(--s-4)' }
         }),
         el('div.actionbar', null, [
           el('button.btn.btn--primary.btn--block', {
             disabled: !host,
-            onClick: () => send((fresh) => startVote(fresh))
-          }, [el('span.btn__icon', { html: icon('vote') }), 'Открыть голосование']),
+            onClick: () => send((fresh) => advanceAfterDiscuss(fresh))
+          }, [
+            el('span.btn__icon', { html: icon(toFinal ? 'vote' : 'arrow') }),
+            toFinal ? 'Начать финальное голосование' : 'Следующий раунд раскрытия'
+          ]),
         ]),
-        !host ? el('p.setting__desc', { text: 'Голосование открывает ведущий.' }) : null
+        !host ? el('p.setting__desc', { text: 'Дальше ведёт ведущий комнаты.' }) : null
       ]));
     }
 

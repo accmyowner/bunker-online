@@ -73,17 +73,25 @@ export const VOTE_TIME_OPTIONS = [
 ];
 
 /** До какого момента игра длится */
+/**
+ * Режим длительности задаёт, сколько характеристик успеют раскрыть,
+ * прежде чем начнётся финальная серия голосований.
+ * Значение — доля карт от общего числа (11).
+ */
 export const END_MODE_OPTIONS = [
-  { value: 'seats',    label: 'До заполнения бункера', desc: 'Классика: пока живых не станет столько же, сколько мест' },
-  { value: 'cards',    label: 'Раскрыть почти все карты', desc: 'Долгая партия: раунды идут, пока не откроется большинство характеристик' }
+  { value: 'short', label: 'Короткая партия', desc: 'Раскрывается около половины характеристик, затем финальное голосование' },
+  { value: 'long',  label: 'Длинная партия',  desc: 'Раскрываются почти все характеристики, затем финальное голосование' }
 ];
+
+/** Доля карт, которую нужно раскрыть до финала, по режимам */
+const REVEAL_TARGET = { short: 0.55, long: 0.9 };
 
 /** Настройки времени по умолчанию — применяются, если ведущий ничего не менял */
 export const DEFAULT_TIMING = {
   turnSeconds: 45,
   discussSeconds: 120,
   voteSeconds: 60,
-  endMode: 'seats'
+  endMode: 'long'
 };
 
 /** Достаёт настройки времени из комнаты, подставляя значения по умолчанию */
@@ -172,6 +180,7 @@ export function buildGame(room) {
     order: shuffle(rng, ids.slice().sort()),
     activeIndex: 0,          // чей сейчас ход (индекс в order среди живых)
     phaseDeadline: null,     // метка времени конца текущей фазы (null = без таймера)
+    finalVoting: false,      // идёт ли финальная серия голосований
     chars,
     roundReveals: {},
     votes: {},
@@ -287,17 +296,27 @@ export function tally(room) {
  *   cards — долгая партия: тянем, пока не раскрыто большинство карт,
  *           но всё равно нельзя оставить меньше игроков, чем мест.
  */
-export function isFinished(room) {
-  const alive = alivePlayers(room).length;
+/**
+ * Раскрытие завершено — пора начинать финальную серию голосований.
+ * Порог зависит от режима. Также раскрытие считается завершённым,
+ * если больше нечего открывать (все карты уже показаны) или если
+ * живых уже столько же, сколько мест (голосовать не за кого).
+ */
+export function revealDone(room) {
+  const alive = alivePlayers(room);
   const seats = room.game.bunker.seats;
-  if (alive <= seats) return true;              // мест не больше, чем людей — всегда конец
+  if (alive.length <= seats) return true;
+  if (revealedFraction(room) >= 1) return true;
+  const target = REVEAL_TARGET[timing(room).endMode] ?? REVEAL_TARGET.long;
+  return revealedFraction(room) >= target;
+}
 
-  if (timing(room).endMode === 'cards') {
-    // В долгом режиме продолжаем, пока раскрыто меньше ~85% карт
-    // и пока есть кого исключать сверх числа мест
-    return revealedFraction(room) >= 0.85;
-  }
-  return false;
+/**
+ * Игра окончена, когда в финальной серии голосований живых
+ * осталось ровно столько, сколько мест в бункере.
+ */
+export function isFinished(room) {
+  return alivePlayers(room).length <= room.game.bunker.seats;
 }
 
 /* ============================================================
@@ -374,13 +393,55 @@ export function endTurn(room) {
   };
 }
 
-/** Переход от обсуждения к голосованию */
+/**
+ * Переход после общего обсуждения.
+ * Пока раскрытие не завершено — начинается следующий раунд раскрытия.
+ * Когда все (или почти все) карты открыты — стартует финальная серия
+ * голосований, где игроков исключают по одному до числа мест.
+ */
+export function advanceAfterDiscuss(room) {
+  const game = room.game;
+  if (game.phase !== PHASES.DISCUSS) return { ok: false, reason: 'Сейчас не обсуждение' };
+
+  // Раскрытие ещё идёт — следующий круг
+  if (!revealDone(room)) {
+    const round = game.round + 1;
+    return {
+      ok: true,
+      patch: {
+        'game/round': round,
+        'game/phase': PHASES.REVEAL,
+        'game/activeIndex': 0,
+        'game/phaseDeadline': null,
+        'game/roundReveals': {},
+        'game/log': game.log.concat(logEntry(`Раунд ${round}. Открываем следующую характеристику.`, 'info')).slice(-60)
+      }
+    };
+  }
+
+  // Раскрытие завершено — начинается финальная серия голосований
+  return {
+    ok: true,
+    patch: {
+      'game/phase': PHASES.VOTE,
+      'game/finalVoting': true,
+      'game/phaseDeadline': deadlineFor(timing(room).voteSeconds),
+      'game/votes': {},
+      'game/log': game.log.concat(
+        logEntry('Все характеристики раскрыты. Начинается финальное голосование.', 'alarm')
+      ).slice(-60)
+    }
+  };
+}
+
+/** Прямой запуск голосования (используется финальной серией) */
 export function startVote(room) {
   const t = timing(room);
   return {
     ok: true,
     patch: {
       'game/phase': PHASES.VOTE,
+      'game/finalVoting': true,
       'game/phaseDeadline': deadlineFor(t.voteSeconds),
       'game/votes': {},
       'game/log': room.game.log.concat(logEntry('Голосование открыто.', 'alarm')).slice(-60)
@@ -419,8 +480,8 @@ export function onDeadline(room) {
       return endTurn(room);
 
     case PHASES.DISCUSS:
-      // Обсуждение закончилось — открываем голосование
-      return startVote(room);
+      // Обсуждение закончилось — либо новый раунд раскрытия, либо финал
+      return advanceAfterDiscuss(room);
 
     case PHASES.VOTE: {
       // Время вышло: подводим итог по уже поданным голосам.
@@ -498,6 +559,11 @@ export function resolveVote(room) {
 }
 
 /** Переход к следующему раунду или к финалу */
+/**
+ * После результата голосования в финальной серии.
+ * Если живых больше, чем мест — следующее голосование (без раскрытия карт).
+ * Если мест хватило — игра завершается.
+ */
 export function nextRound(room) {
   const preview = room;
   if (isFinished(preview)) {
@@ -509,6 +575,7 @@ export function nextRound(room) {
       patch: {
         'game/phase': PHASES.ENDED,
         'status': 'ended',
+        'game/phaseDeadline': null,
         'game/log': preview.game.log
           .concat(logEntry(`Гермозатвор запечатан. Внутри: ${survivors}.`, 'good'))
           .slice(-60)
@@ -516,18 +583,22 @@ export function nextRound(room) {
     };
   }
 
+  // Ещё есть лишние — продолжаем финальную серию новым голосованием
   const round = preview.game.round + 1;
   return {
     ok: true,
     patch: {
       'game/round': round,
-      'game/phase': PHASES.REVEAL,
-      'game/activeIndex': 0,          // очередь начинается заново с первого живого
-      'game/phaseDeadline': null,
-      'game/roundReveals': {},
+      'game/phase': PHASES.VOTE,
+      'game/finalVoting': true,
+      'game/phaseDeadline': deadlineFor(timing(preview).voteSeconds),
       'game/votes': {},
+      'game/voteRound': 1,
+      'game/candidates': null,
       'game/lastEliminated': null,
-      'game/log': preview.game.log.concat(logEntry(`Раунд ${round}.`, 'info')).slice(-60)
+      'game/log': preview.game.log.concat(
+        logEntry(`Следующее голосование. Осталось исключить ещё ${alivePlayers(preview).length - preview.game.bunker.seats}.`, 'alarm')
+      ).slice(-60)
     }
   };
 }
