@@ -9,6 +9,7 @@ import { on, emit, EV } from '../../core/bus.js';
 import { icon } from '../components/icons.js';
 import { confirm } from '../components/modal.js';
 import { seatRow } from '../components/card.js';
+import { roomSettingsPanel } from '../components/roomSettings.js';
 import { go, backButton } from '../router.js';
 import * as room from '../../net/room.js';
 import { play } from '../../audio/sfx.js';
@@ -112,9 +113,17 @@ export function lobbyScreen() {
     hint
   ]);
 
+  // Панель настроек партии: время ходов, обсуждения, голосования, режим
+  const settings = roomSettingsPanel();
+  const settingsPanel = el('div.panel', { style: { padding: 'var(--s-5)' } }, [
+    el('div.eyebrow', { text: 'Настройки партии', style: { marginBottom: 'var(--s-3)' } }),
+    settings.node
+  ]);
+
   wrap.append(codeCard, el('div', { style: { display: 'grid', gap: 'var(--s-4)' } }, [
     el('div', null, [backButton('menu', 'В меню')]),
-    playersPanel
+    playersPanel,
+    settingsPanel
   ]));
 
   /* --- Отрисовка по состоянию --- */
@@ -130,11 +139,15 @@ export function lobbyScreen() {
       code: state.code,
       status: state.status,
       host: state.hostId,
+      settings: state.settings || {},
       players: Object.entries(state.players || {})
         .map(([id, player]) => [id, player.name, room.isOnline(player)])
     });
     if (signatureNow === lastSignature) return;
     lastSignature = signatureNow;
+
+    // Обновляем панель настроек (подсветка выбранных значений, права ведущего)
+    settings.update(state);
 
     codeValue.textContent = state.code;
 

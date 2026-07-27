@@ -12,16 +12,18 @@ import { CATASTROPHES } from '../data/catastrophes.js';
 import { DURATIONS, FOOD, WATER, MEDICINE, ROOMS, QUIRKS, seatsFor } from '../data/bunkers.js';
 
 export const PHASES = {
-  REVEAL:  'reveal',
-  DISCUSS: 'discuss',
+  REVEAL:  'reveal',   // активный игрок открывает карту
+  TURN:    'turn',     // личное время рассказа активного игрока
+  DISCUSS: 'discuss',  // общее обсуждение
   VOTE:    'vote',
   RESULT:  'result',
   ENDED:   'ended'
 };
 
 export const PHASE_META = {
-  reveal:  { title: 'Раскрытие карт',   desc: 'Откройте нужное число характеристик' },
-  discuss: { title: 'Обсуждение',       desc: 'Договоритесь, кто останется снаружи' },
+  reveal:  { title: 'Ход игрока',       desc: 'Активный игрок открывает одну карту' },
+  turn:    { title: 'Рассказ',          desc: 'Игрок рассказывает о своей характеристике' },
+  discuss: { title: 'Обсуждение',       desc: 'Общий разговор перед голосованием' },
   vote:    { title: 'Голосование',      desc: 'Выберите, кого не пускать в бункер' },
   result:  { title: 'Итог раунда',      desc: 'Голоса подсчитаны' },
   ended:   { title: 'Игра завершена',   desc: 'Состав бункера определён' }
@@ -36,6 +38,68 @@ export const PHASE_META = {
  */
 export function revealQuota(round) {
   return 1;
+}
+
+/* ============================================================
+   НАСТРОЙКИ ВРЕМЕНИ И РЕЖИМА
+   Значения в секундах. 0 = без ограничения.
+   Списки вариантов используются экраном настроек лобби.
+   ============================================================ */
+
+export const TURN_TIME_OPTIONS = [
+  { value: 15,  label: '15 сек' },
+  { value: 30,  label: '30 сек' },
+  { value: 45,  label: '45 сек' },
+  { value: 60,  label: '1 минута' },
+  { value: 120, label: '2 минуты' },
+  { value: 0,   label: 'Без ограничения' }
+];
+
+export const DISCUSS_TIME_OPTIONS = [
+  { value: 30,  label: '30 сек' },
+  { value: 60,  label: '1 минута' },
+  { value: 120, label: '2 минуты' },
+  { value: 180, label: '3 минуты' },
+  { value: 300, label: '5 минут' },
+  { value: 0,   label: 'Без ограничения' }
+];
+
+export const VOTE_TIME_OPTIONS = [
+  { value: 15,  label: '15 сек' },
+  { value: 30,  label: '30 сек' },
+  { value: 60,  label: '1 минута' },
+  { value: 120, label: '2 минуты' },
+  { value: 0,   label: 'Без ограничения' }
+];
+
+/** До какого момента игра длится */
+export const END_MODE_OPTIONS = [
+  { value: 'seats',    label: 'До заполнения бункера', desc: 'Классика: пока живых не станет столько же, сколько мест' },
+  { value: 'cards',    label: 'Раскрыть почти все карты', desc: 'Долгая партия: раунды идут, пока не откроется большинство характеристик' }
+];
+
+/** Настройки времени по умолчанию — применяются, если ведущий ничего не менял */
+export const DEFAULT_TIMING = {
+  turnSeconds: 45,
+  discussSeconds: 120,
+  voteSeconds: 60,
+  endMode: 'seats'
+};
+
+/** Достаёт настройки времени из комнаты, подставляя значения по умолчанию */
+export function timing(room) {
+  const s = room.settings || {};
+  return {
+    turnSeconds:    s.turnSeconds    ?? DEFAULT_TIMING.turnSeconds,
+    discussSeconds: s.discussSeconds ?? DEFAULT_TIMING.discussSeconds,
+    voteSeconds:    s.voteSeconds    ?? DEFAULT_TIMING.voteSeconds,
+    endMode:        s.endMode        ?? DEFAULT_TIMING.endMode
+  };
+}
+
+/** Дедлайн фазы: текущее время + длительность. 0 секунд = без дедлайна (null). */
+function deadlineFor(seconds) {
+  return seconds > 0 ? Date.now() + seconds * 1000 : null;
 }
 
 /* ============================================================
@@ -106,6 +170,8 @@ export function buildGame(room) {
     round: 1,
     phase: PHASES.REVEAL,
     order: shuffle(rng, ids.slice().sort()),
+    activeIndex: 0,          // чей сейчас ход (индекс в order среди живых)
+    phaseDeadline: null,     // метка времени конца текущей фазы (null = без таймера)
     chars,
     roundReveals: {},
     votes: {},
@@ -146,6 +212,52 @@ export function revealsLeft(room, playerId) {
 }
 
 /** Все ли выполнили норму раскрытия */
+/** Живые игроки в порядке очереди раунда */
+export function turnOrder(room) {
+  const alive = new Set(alivePlayers(room));
+  return (room.game?.order || []).filter((id) => alive.has(id));
+}
+
+/** Кто сейчас ходит (id активного игрока) */
+export function activePlayer(room) {
+  const order = turnOrder(room);
+  const idx = room.game?.activeIndex ?? 0;
+  return order[idx] || null;
+}
+
+/** Это ход данного игрока прямо сейчас? */
+export function isActiveTurn(room, playerId) {
+  return activePlayer(room) === playerId;
+}
+
+/** Сколько секунд осталось до конца фазы (для отображения) */
+export function secondsLeft(room) {
+  const deadline = room.game?.phaseDeadline;
+  if (!deadline) return null;
+  return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+}
+
+/** Истёк ли дедлайн текущей фазы */
+export function deadlinePassed(room) {
+  const deadline = room.game?.phaseDeadline;
+  return Boolean(deadline) && Date.now() >= deadline;
+}
+
+/** Сколько карт всего у персонажа (для режима «раскрыть почти все») */
+function traitCount() {
+  return TRAIT_ORDER.length;
+}
+
+/** Средняя доля раскрытых карт среди живых игроков */
+function revealedFraction(room) {
+  const alive = alivePlayers(room);
+  if (!alive.length) return 1;
+  const total = alive.length * traitCount();
+  let opened = 0;
+  for (const id of alive) opened += Object.keys(room.game.chars[id]?.revealed || {}).length;
+  return opened / total;
+}
+
 export function everyoneRevealed(room) {
   return alivePlayers(room).every((id) => revealsLeft(room, id) === 0);
 }
@@ -169,52 +281,107 @@ export function tally(room) {
   return counts;
 }
 
-/** Игра окончена, когда живых осталось ровно столько, сколько мест */
+/**
+ * Игра окончена. Зависит от режима из настроек:
+ *   seats — классика: живых осталось столько же, сколько мест;
+ *   cards — долгая партия: тянем, пока не раскрыто большинство карт,
+ *           но всё равно нельзя оставить меньше игроков, чем мест.
+ */
 export function isFinished(room) {
-  return alivePlayers(room).length <= room.game.bunker.seats;
+  const alive = alivePlayers(room).length;
+  const seats = room.game.bunker.seats;
+  if (alive <= seats) return true;              // мест не больше, чем людей — всегда конец
+
+  if (timing(room).endMode === 'cards') {
+    // В долгом режиме продолжаем, пока раскрыто меньше ~85% карт
+    // и пока есть кого исключать сверх числа мест
+    return revealedFraction(room) >= 0.85;
+  }
+  return false;
 }
 
 /* ============================================================
    ДЕЙСТВИЯ (возвращают патч для записи в сеть)
    ============================================================ */
 
-/** Игрок открывает свою характеристику */
+/**
+ * Активный игрок открывает свою характеристику.
+ * Ход строго по очереди: открыть карту может только тот, чей ход.
+ * После раскрытия начинается его личное время рассказа (фаза TURN).
+ */
 export function reveal(room, playerId, traitKey) {
   const game = room.game;
   if (game.phase !== PHASES.REVEAL) return { ok: false, reason: 'Сейчас не этап раскрытия' };
   if (!isAlive(room, playerId)) return { ok: false, reason: 'Вы уже вне игры' };
+  if (!isActiveTurn(room, playerId)) return { ok: false, reason: 'Сейчас не ваш ход' };
   if (game.chars[playerId]?.revealed?.[traitKey]) return { ok: false, reason: 'Уже открыто' };
-  if (revealsLeft(room, playerId) <= 0) return { ok: false, reason: 'Норма раунда исчерпана' };
+  if (revealsLeft(room, playerId) <= 0) return { ok: false, reason: 'В этом раунде вы уже открыли карту' };
 
   const name = room.players[playerId]?.name || 'Игрок';
   const value = game.chars[playerId].traits[traitKey];
+  const t = timing(room);
+
+  const nextLog = game.log.concat(logEntry(`${name}: ${value}`, 'reveal')).slice(-60);
 
   const patch = {
     [`game/chars/${playerId}/revealed/${traitKey}`]: true,
-    [`game/roundReveals/${playerId}`]: revealedThisRound(room, playerId) + 1
+    [`game/roundReveals/${playerId}`]: revealedThisRound(room, playerId) + 1,
+    // Сразу после раскрытия — личное время рассказа этого игрока
+    'game/phase': PHASES.TURN,
+    'game/phaseDeadline': deadlineFor(t.turnSeconds),
+    'game/log': nextLog
   };
-
-  const nextLog = game.log.concat(logEntry(`${name}: ${value}`, 'reveal')).slice(-60);
-  patch['game/log'] = nextLog;
-
-  // Локально применяем, чтобы проверить, не пора ли менять фазу
-  const preview = applyPatch(structuredClone(room), patch);
-  if (everyoneRevealed(preview)) {
-    patch['game/phase'] = PHASES.DISCUSS;
-    patch['game/log'] = nextLog.concat(
-      logEntry('Все карты этого раунда открыты. Переходите к обсуждению.', 'info')
-    ).slice(-60);
-  }
 
   return { ok: true, patch };
 }
 
-/** Ведущий переводит стол от обсуждения к голосованию */
+/**
+ * Завершить текущий ход и передать очередь дальше.
+ * Вызывается по истечении таймера рассказа (ведущим) или досрочно
+ * кнопкой «Дальше». Когда очередь закончилась — общее обсуждение.
+ */
+export function endTurn(room) {
+  const game = room.game;
+  if (game.phase !== PHASES.TURN && game.phase !== PHASES.REVEAL) {
+    return { ok: false, reason: 'Сейчас не ход игрока' };
+  }
+  const order = turnOrder(room);
+  const nextIndex = (game.activeIndex ?? 0) + 1;
+  const t = timing(room);
+
+  // Ещё есть игроки в очереди — передаём ход следующему
+  if (nextIndex < order.length) {
+    const nextName = room.players[order[nextIndex]]?.name || 'Игрок';
+    return {
+      ok: true,
+      patch: {
+        'game/activeIndex': nextIndex,
+        'game/phase': PHASES.REVEAL,
+        'game/phaseDeadline': null,
+        'game/log': game.log.concat(logEntry(`Ход переходит к ${nextName}.`, 'info')).slice(-60)
+      }
+    };
+  }
+
+  // Очередь закончена — начинается общее обсуждение
+  return {
+    ok: true,
+    patch: {
+      'game/phase': PHASES.DISCUSS,
+      'game/phaseDeadline': deadlineFor(t.discussSeconds),
+      'game/log': game.log.concat(logEntry('Все высказались. Общее обсуждение.', 'info')).slice(-60)
+    }
+  };
+}
+
+/** Переход от обсуждения к голосованию */
 export function startVote(room) {
+  const t = timing(room);
   return {
     ok: true,
     patch: {
       'game/phase': PHASES.VOTE,
+      'game/phaseDeadline': deadlineFor(t.voteSeconds),
       'game/votes': {},
       'game/log': room.game.log.concat(logEntry('Голосование открыто.', 'alarm')).slice(-60)
     }
@@ -235,6 +402,47 @@ export function castVote(room, voterId, targetId) {
     Object.assign(patch, resolveVote(preview).patch);
   }
   return { ok: true, patch };
+}
+
+/**
+ * Обработка истёкшего таймера фазы. Вызывает ТОЛЬКО ведущий —
+ * иначе несколько клиентов одновременно запишут переход.
+ * Возвращает патч перехода или { ok: false }, если делать нечего.
+ */
+export function onDeadline(room) {
+  const game = room.game;
+  if (!deadlinePassed(room)) return { ok: false, reason: 'Время ещё не вышло' };
+
+  switch (game.phase) {
+    case PHASES.TURN:
+      // Личное время вышло — передаём ход дальше
+      return endTurn(room);
+
+    case PHASES.DISCUSS:
+      // Обсуждение закончилось — открываем голосование
+      return startVote(room);
+
+    case PHASES.VOTE: {
+      // Время вышло: подводим итог по уже поданным голосам.
+      // Если не проголосовал никто — засчитываем воздержавшихся
+      // и просто переходим дальше без изгнания.
+      if (Object.keys(game.votes || {}).length === 0) {
+        return {
+          ok: true,
+          patch: {
+            'game/phase': PHASES.RESULT,
+            'game/phaseDeadline': null,
+            'game/lastEliminated': null,
+            'game/log': game.log.concat(logEntry('Никто не проголосовал. Раунд без изгнания.', 'alarm')).slice(-60)
+          }
+        };
+      }
+      return resolveVote(room);
+    }
+
+    default:
+      return { ok: false, reason: 'В этой фазе нет таймера' };
+  }
 }
 
 /**
@@ -260,6 +468,7 @@ export function resolveVote(room) {
         'game/votes': {},
         'game/voteRound': game.voteRound + 1,
         'game/candidates': leaders,
+        'game/phaseDeadline': deadlineFor(timing(room).voteSeconds),
         'game/log': log.slice(-60)
       }
     };
@@ -279,6 +488,7 @@ export function resolveVote(room) {
     'game/eliminated': game.eliminated.concat(victim),
     'game/lastEliminated': victim,
     'game/phase': PHASES.RESULT,
+    'game/phaseDeadline': null,
     'game/candidates': null,
     'game/voteRound': 1,
     'game/log': log.slice(-60)
@@ -312,6 +522,8 @@ export function nextRound(room) {
     patch: {
       'game/round': round,
       'game/phase': PHASES.REVEAL,
+      'game/activeIndex': 0,          // очередь начинается заново с первого живого
+      'game/phaseDeadline': null,
       'game/roundReveals': {},
       'game/votes': {},
       'game/lastEliminated': null,

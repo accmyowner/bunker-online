@@ -15,7 +15,8 @@ import * as room from '../../net/room.js';
 import { play } from '../../audio/sfx.js';
 import {
   PHASES, PHASE_META, revealsLeft, alivePlayers, isAlive, voteCandidates, tally,
-  everyoneRevealed, everyoneVoted, reveal, startVote, castVote, resolveVote, nextRound
+  everyoneRevealed, everyoneVoted, reveal, startVote, castVote, resolveVote, nextRound,
+  endTurn, onDeadline, activePlayer, isActiveTurn, turnOrder, secondsLeft, deadlinePassed
 } from '../../game/engine.js';
 import { CATASTROPHE_BY_ID } from '../../data/catastrophes.js';
 
@@ -137,9 +138,28 @@ function logPanel(game) {
    ФАЗЫ
    ============================================================ */
 
+/** Подпись под карточкой: зависит от фазы и того, чей ход */
+function buildCardFooter(state, id, mine, activeId) {
+  const game = state.game;
+  if (!mine) {
+    if (id === activeId && (game.phase === PHASES.REVEAL || game.phase === PHASES.TURN)) {
+      return [el('span.badge.badge--cyan', { text: game.phase === PHASES.TURN ? 'Рассказывает' : 'Ходит' })];
+    }
+    return null;
+  }
+  // Своя карточка
+  if (game.phase === PHASES.REVEAL && activeId === id) {
+    return [el('span.badge.badge--amber', { text: 'Ваш ход — откройте карту' })];
+  }
+  if (game.phase === PHASES.TURN && activeId === id) {
+    return [el('span.badge.badge--cyan', { text: 'Ваше время рассказа' })];
+  }
+  return null;
+}
+
 /** Круговой индикатор раунда */
 function gauge(round, phase) {
-  const order = [PHASES.REVEAL, PHASES.DISCUSS, PHASES.VOTE, PHASES.RESULT];
+  const order = [PHASES.REVEAL, PHASES.TURN, PHASES.DISCUSS, PHASES.VOTE, PHASES.RESULT];
   const index = Math.max(0, order.indexOf(phase));
   const progress = (index + 1) / order.length;
   const radius = 24;
@@ -161,23 +181,51 @@ function phaseBar(state) {
   const game = state.game;
   const meta = PHASE_META[game.phase] || PHASE_META.reveal;
   const alive = alivePlayers(state).length;
+  const meId = room.identity().id;
 
   let extra = '';
   if (game.phase === PHASES.REVEAL) {
-    const waiting = alivePlayers(state).filter((id) => revealsLeft(state, id) > 0).length;
-    extra = waiting ? `Ждём ещё ${waiting} игроков` : 'Все готовы';
+    const active = activePlayer(state);
+    const name = state.players[active]?.name || 'игрок';
+    extra = active === meId ? 'Ваш ход — откройте одну карту' : `Ход игрока: ${name}`;
+  } else if (game.phase === PHASES.TURN) {
+    const active = activePlayer(state);
+    const name = state.players[active]?.name || 'игрок';
+    extra = active === meId ? 'Ваше время рассказа' : `Рассказывает: ${name}`;
+  } else if (game.phase === PHASES.DISCUSS) {
+    extra = 'Общий разговор перед голосованием';
   } else if (game.phase === PHASES.VOTE) {
     const voted = Object.keys(game.votes || {}).length;
     extra = `Проголосовали: ${voted} из ${alive}`;
   }
 
-  return el('div.panel.phasebar', null, [
+  const children = [
     gauge(game.round, game.phase),
     el('div.phasebar__body', null, [
       el('div.eyebrow', { text: `Раунд ${game.round} · в игре ${alive} · мест ${game.bunker.seats}` }),
       el('div.phasebar__title', { text: meta.title }),
       el('div.phasebar__desc', { text: extra || meta.desc })
     ])
+  ];
+
+  // Таймер фазы, если он задан
+  const left = secondsLeft(state);
+  if (left !== null) {
+    children.push(timerChip(left));
+  }
+
+  return el('div.panel.phasebar', null, children);
+}
+
+/** Компактный таймер с обратным отсчётом */
+function timerChip(seconds) {
+  const mm = Math.floor(seconds / 60);
+  const ss = seconds % 60;
+  const text = mm > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : `${ss}`;
+  const low = seconds <= 10;
+  return el(`div.timer${low ? '.timer--low' : ''}`, null, [
+    el('span.timer__icon', { html: icon('clock') }),
+    el('span.timer__val', { text })
   ]);
 }
 
@@ -329,6 +377,8 @@ export function gameScreen() {
       status: state.status,
       phase: game?.phase,
       round: game?.round,
+      activeIndex: game?.activeIndex,
+      deadline: game?.phaseDeadline || 0,
       eliminated: game?.eliminated,
       votes: game?.votes,
       reveals: game?.roundReveals,
@@ -396,10 +446,13 @@ export function gameScreen() {
     // Карточки игроков
     const roster = el('div.roster');
     const order = game.order.filter((id) => state.players[id]);
+    const activeId = activePlayer(state);
     for (const id of order) {
       const player = state.players[id];
       const mine = id === meId;
-      const quota = mine ? revealsLeft(state, id) : 0;
+      // Открыть карту можно только в СВОЙ ход в фазе REVEAL
+      const myTurnToReveal = mine && game.phase === PHASES.REVEAL && activeId === meId;
+      const quota = myTurnToReveal ? revealsLeft(state, id) : 0;
 
       const card = playerCard({
         player,
@@ -408,25 +461,22 @@ export function gameScreen() {
         out: !isAlive(state, id),
         online: room.isOnline(player),
         isHost: state.hostId === id,
-        quotaLeft: game.phase === PHASES.REVEAL ? quota : 0,
+        quotaLeft: quota,
         onReveal: async (key, tile) => {
           const value = game.chars[id].traits[key];
           play('card');
-          // Держим экран от перерисовки только на время переворота
-          // жетона. Дольше держать нельзя: за это время другой игрок
-          // может раскрыть карту, и она должна появиться сразу после
-          // окончания анимации, а не висеть скрытой лишнюю секунду.
+          // Держим экран от перерисовки только на время переворота жетона
           holdUntil = Date.now() + 680;
           animateReveal(tile, value);
           await send((fresh) => reveal(fresh, id, key));
         },
-        footer: mine && game.phase === PHASES.REVEAL && quota > 0
-          ? [el('span.badge.badge--amber', { text: `Открыть карт: ${quota}` })]
-          : mine ? [el('span.badge', { text: 'Норма раунда выполнена' })] : null
+        footer: buildCardFooter(state, id, mine, activeId)
       });
 
-      // Появление анимируем только при первом входе на экран:
-      // иначе карточки прыгали бы при каждом обновлении
+      // Активный игрок выделяется рамкой
+      if (id === activeId && game.phase !== PHASES.DISCUSS && game.phase !== PHASES.VOTE) {
+        card.classList.add('pcard--turn');
+      }
       if (firstPaint) card.classList.add('pcard--enter');
       roster.append(card);
     }
@@ -440,43 +490,60 @@ export function gameScreen() {
 
     /* --- Действие фазы --- */
     if (game.phase === PHASES.REVEAL) {
-      const left = revealsLeft(state, meId);
-      const allDone = everyoneRevealed(state);
+      const active = activePlayer(state);
+      const myTurn = active === meId;
+      const activeName = state.players[active]?.name || 'игрок';
 
       main.append(el('div.panel', { style: { padding: 'var(--s-4) var(--s-5)' } }, [
         el('p.brief__text', {
           text: !isAlive(state, meId)
             ? 'Вы вне игры и наблюдаете за остальными.'
-            : left > 0
-              ? `Откройте ещё ${left} ${left === 1 ? 'характеристику' : 'характеристики'} на своей карточке.`
-              : 'Вы всё открыли. Ждём остальных участников.'
+            : myTurn
+              ? 'Ваш ход. Нажмите на одну из своих подсвеченных карт, чтобы раскрыть её.'
+              : `Сейчас ходит ${activeName}. Дождитесь своей очереди.`
         }),
-        // Если два игрока открыли карты в одну секунду, ни один из них
-        // не увидел ход другого и фаза могла не переключиться сама.
-        // Ведущий разблокирует стол вручную.
-        allDone && host
+        // Страховка ведущего: если активный игрок отключился и не ходит,
+        // ведущий может пропустить его ход
+        host && !myTurn
           ? el('div.actionbar', null, [
-              el('button.btn.btn--primary.btn--block', {
-                onClick: () => send((fresh) => {
-                  // Перепроверяем на свежих данных: вдруг чей-то ход
-                  // пришёл уже после отрисовки этой кнопки
-                  if (!everyoneRevealed(fresh)) {
-                    return { ok: false, reason: 'Не все игроки раскрыли карты' };
-                  }
-                  return { ok: true, patch: { 'game/phase': PHASES.DISCUSS } };
-                })
-              }, [el('span.btn__icon', { html: icon('arrow') }), 'Перейти к обсуждению'])
+              el('button.btn.btn--ghost.btn--sm', {
+                onClick: () => send((fresh) => endTurn(fresh))
+              }, [el('span.btn__icon', { html: icon('arrow') }), 'Пропустить ход игрока'])
             ])
           : null
       ]));
     }
 
+    if (game.phase === PHASES.TURN) {
+      const active = activePlayer(state);
+      const myTurn = active === meId;
+      const activeName = state.players[active]?.name || 'игрок';
+
+      main.append(el('div.panel', { style: { padding: 'var(--s-5)' } }, [
+        el('div.eyebrow', { text: 'Личное время' }),
+        el('p.brief__text', {
+          text: myTurn
+            ? 'Расскажите остальным о своей открытой характеристике. Когда закончите — нажмите «Дальше».'
+            : `${activeName} рассказывает о своей карте. Слушайте и задавайте вопросы.`,
+          style: { margin: 'var(--s-2) 0 var(--s-4)' }
+        }),
+        // Дальше двигать может сам игрок (закончил раньше) или ведущий
+        (myTurn || host)
+          ? el('div.actionbar', null, [
+              el('button.btn.btn--primary.btn--block', {
+                onClick: () => send((fresh) => endTurn(fresh))
+              }, [el('span.btn__icon', { html: icon('arrow') }), 'Дальше'])
+            ])
+          : el('p.setting__desc', { text: 'Ход завершится по таймеру или когда игрок закончит.' })
+      ]));
+    }
+
     if (game.phase === PHASES.DISCUSS) {
       main.append(el('div.panel', { style: { padding: 'var(--s-5)' } }, [
-        el('div.eyebrow', { text: 'Обсуждение' }),
+        el('div.eyebrow', { text: 'Общее обсуждение' }),
         el('p.brief__text', {
-          text: 'Договоритесь голосом или в чате: кто из открывшихся сегодня менее полезен убежищу. ' +
-                'Когда все выскажутся, ведущий откроет голосование.',
+          text: 'Все высказались по своим картам. Обсудите, кто из игроков менее полезен убежищу. ' +
+                'Когда будете готовы, ведущий откроет голосование.',
           style: { margin: 'var(--s-2) 0 var(--s-4)' }
         }),
         el('div.actionbar', null, [
@@ -499,6 +566,33 @@ export function gameScreen() {
   const offLeft = on(EV.ROOM_LEFT, () => go('menu'));
   paint(room.current());
 
-  wrap.cleanup = () => { off(); offLeft(); clearTimeout(pendingTimer); };
+  /**
+   * Секундный тик. Делает две вещи:
+   *  1) обновляет цифру таймера на экране, не перерисовывая всё;
+   *  2) если время фазы вышло — ТОЛЬКО ведущий шлёт переход,
+   *     чтобы не было гонки из нескольких клиентов.
+   */
+  const tick = setInterval(() => {
+    const state = room.current();
+    if (!state || !state.game) return;
+
+    // Обновляем видимую цифру таймера
+    const left = secondsLeft(state);
+    const valNode = wrap.querySelector('.timer__val');
+    if (valNode && left !== null) {
+      const mm = Math.floor(left / 60);
+      const ss = left % 60;
+      valNode.textContent = mm > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : `${ss}`;
+      const chip = valNode.closest('.timer');
+      if (chip) chip.classList.toggle('timer--low', left <= 10);
+    }
+
+    // Истечение обрабатывает только ведущий
+    if (room.isHost(state) && deadlinePassed(state)) {
+      send((fresh) => onDeadline(fresh));
+    }
+  }, 1000);
+
+  wrap.cleanup = () => { off(); offLeft(); clearTimeout(pendingTimer); clearInterval(tick); };
   return wrap;
 }
