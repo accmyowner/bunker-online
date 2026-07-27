@@ -67,13 +67,14 @@ function catastrophePanel(game) {
 }
 
 function resourceRow(iconName, name, value) {
-  return el('div.res', null, [
+  return el('div.res.res--stacked', null, [
     el('div.res__icon', { html: icon(iconName) }),
     el('div.res__body', null, [
-      el('div.res__row', null, [
-        el('span.res__name', { text: name }),
-        el('span.res__val', { text: value })
-      ])
+      el('div.res__name', { text: name }),
+      // Значение во всю ширину строки: длинные описания (вода, еда,
+      // медикаменты) должны использовать всю ширину карточки и не
+      // ломаться на короткие обрывки в узкой колонке
+      el('div.res__val.res__val--full', { text: value })
     ])
   ]);
 }
