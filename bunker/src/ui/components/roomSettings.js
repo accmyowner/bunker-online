@@ -14,7 +14,7 @@ import { icon } from './icons.js';
 import * as room from '../../net/room.js';
 import {
   TURN_TIME_OPTIONS, DISCUSS_TIME_OPTIONS, VOTE_TIME_OPTIONS,
-  END_MODE_OPTIONS, timing
+  REVEAL_COUNT_OPTIONS, timing
 } from '../../game/engine.js';
 
 /** Ряд кнопок-вариантов. Активный подсвечен; не-ведущему кнопки заблокированы. */
@@ -89,20 +89,16 @@ export function roomSettingsPanel() {
 
       el('div.setblock', null, [
         el('div.setblock__head', null, [
-          el('span.setblock__icon', { html: icon('hatch') }),
+          el('span.setblock__icon', { html: icon('eye') }),
           el('div', null, [
-            el('div.setblock__name', { text: 'Продолжительность игры' }),
-            el('div.setblock__desc', { text: 'Когда партия завершается' })
+            el('div.setblock__name', { text: 'Голосование после раскрытия' }),
+            el('div.setblock__desc', { text: 'Сколько характеристик открывают перед финальным голосованием' })
           ])
         ]),
         optionRow({
-          options: END_MODE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-          current: t.endMode, canEdit,
-          onPick: (v) => writeSetting('endMode', v)
-        }),
-        el('div.setblock__desc', {
-          text: END_MODE_OPTIONS.find((o) => o.value === t.endMode)?.desc || '',
-          style: { marginTop: 'var(--s-2)' }
+          options: REVEAL_COUNT_OPTIONS,
+          current: t.revealCount, canEdit,
+          onPick: (v) => writeSetting('revealCount', v)
         })
       ])
     );

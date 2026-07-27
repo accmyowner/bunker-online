@@ -1,0 +1,228 @@
+/* ============================================================
+   АТМОСФЕРНЫЙ РЕДИЗАЙН «ПОДЗЕМНЫЙ БУНКЕР»
+   Подключается последним и усиливает материальность интерфейса,
+   не переопределяя логику базовых стилей. Только внешний вид.
+
+   Идея: панели — стальные пластины, привинченные к бетону;
+   заголовки — трафаретная маркировка; активные элементы освещены
+   аварийными плафонами. Смелость сосредоточена в «шильдиках» и
+   свете, всё остальное — сдержанный графит.
+   ============================================================ */
+
+/* --- Панель как привинченная стальная плита ----------------- */
+.panel {
+  background:
+    linear-gradient(180deg, rgba(38,45,57,.30), rgba(16,21,28,.30)),
+    var(--glass-bg);
+  border-color: rgba(120,134,156,.16);
+  box-shadow:
+    var(--sh-3),
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 0 0 1px rgba(0,0,0,.25);
+}
+
+/* Заклёпки по углам крупных панелей — привинчено к стене */
+.brief::after,
+.phasebar::after,
+.codecard::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle 2.5px at 0 0,     rgba(150,164,186,.5) 60%, transparent),
+    radial-gradient(circle 2.5px at 100% 0,  rgba(150,164,186,.5) 60%, transparent),
+    radial-gradient(circle 2.5px at 0 100%,  rgba(150,164,186,.5) 60%, transparent),
+    radial-gradient(circle 2.5px at 100% 100%, rgba(150,164,186,.5) 60%, transparent);
+  background-repeat: no-repeat;
+}
+.brief, .phasebar, .codecard { position: relative; }
+
+/* --- Трафаретная маркировка заголовков ---------------------- */
+.eyebrow {
+  position: relative;
+  padding-left: 14px;
+}
+/* Аварийный индикатор перед каждым «шильдиком» */
+.eyebrow::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 6px; height: 6px;
+  transform: translateY(-50%);
+  border-radius: 1px;
+  background: var(--c-amber);
+  box-shadow: 0 0 8px var(--c-amber-hot);
+  opacity: .8;
+}
+
+/* --- Кнопки как тумблеры пульта ----------------------------- */
+.btn {
+  background:
+    linear-gradient(180deg, rgba(46,54,67,.5), rgba(22,27,35,.5)),
+    var(--glass-bg-hi);
+  border-color: rgba(120,134,156,.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -2px 6px rgba(0,0,0,.3),
+    var(--sh-1);
+}
+.btn--primary {
+  background:
+    linear-gradient(180deg, rgba(255,138,31,.32), rgba(242,101,10,.14)),
+    linear-gradient(180deg, rgba(46,54,67,.4), rgba(22,27,35,.4));
+  border-color: rgba(255,179,71,.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,170,.35),
+    inset 0 -2px 8px rgba(0,0,0,.35),
+    var(--glow-amber), var(--sh-2);
+}
+
+/* Кнопки меню — как переключатели с гравировкой номера сектора */
+.btn--menu {
+  background:
+    linear-gradient(90deg, rgba(255,138,31,.06), transparent 40%),
+    linear-gradient(180deg, rgba(46,54,67,.45), rgba(18,22,29,.45));
+  border-left: 2px solid rgba(255,179,71,.35);
+}
+.btn--menu:hover { border-left-color: var(--c-amber); }
+
+/* --- Карточка игрока как металлический планшет -------------- */
+.pcard {
+  background:
+    linear-gradient(180deg, rgba(40,47,59,.4), rgba(16,20,27,.5)),
+    var(--glass-bg);
+  border-color: rgba(120,134,156,.18);
+  box-shadow:
+    var(--sh-2),
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 0 0 1px rgba(0,0,0,.2);
+}
+/* Клёпаный уголок и инвентарный номер на шапке карточки */
+.pcard__head {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), transparent),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.015) 0 1px, transparent 1px 4px);
+}
+.pcard__avatar {
+  background:
+    linear-gradient(145deg, #2a323f, #12161d);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.1),
+    inset 0 -2px 4px rgba(0,0,0,.4);
+  border-color: rgba(120,134,156,.25);
+}
+/* Активный игрок освещён аварийным плафоном сверху */
+.pcard--turn {
+  border-color: rgba(77,208,255,.55);
+}
+.pcard--turn::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 15%; right: 15%;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--c-cyan);
+  box-shadow: 0 0 16px 2px var(--c-cyan);
+  animation: beacon 2s var(--e-inout) infinite;
+}
+@keyframes beacon {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: 1; }
+}
+
+/* --- Плитка характеристики как штампованная бирка ----------- */
+.trait {
+  background:
+    linear-gradient(180deg, rgba(30,36,46,.4), rgba(12,15,20,.55));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), inset 0 0 0 1px rgba(0,0,0,.2);
+}
+.trait--revealed {
+  background:
+    linear-gradient(180deg, rgba(255,138,31,.10), rgba(12,15,20,.5));
+}
+.trait--special.trait--revealed {
+  background:
+    linear-gradient(180deg, rgba(77,208,255,.12), rgba(12,15,20,.5));
+}
+
+/* --- Экран голосования: тревожный красный пульт ------------- */
+.votebtn {
+  background:
+    linear-gradient(180deg, rgba(40,30,32,.4), rgba(16,12,14,.55)),
+    rgba(10,13,18,.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), inset 0 0 0 1px rgba(0,0,0,.25);
+}
+.votebtn:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, rgba(255,59,48,.12), rgba(16,12,14,.55));
+}
+.votebtn--picked {
+  background:
+    linear-gradient(180deg, rgba(255,59,48,.20), rgba(16,12,14,.6));
+}
+
+/* --- Код комнаты как табло на гермодвери -------------------- */
+.codecard {
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255,138,31,.08), transparent 60%),
+    linear-gradient(180deg, rgba(40,47,59,.4), rgba(16,20,27,.5)),
+    var(--glass-bg);
+}
+.codecard__code {
+  padding: var(--s-2) 0;
+  border-top: 1px solid rgba(255,179,71,.15);
+  border-bottom: 1px solid rgba(255,179,71,.15);
+  background: linear-gradient(180deg, transparent, rgba(255,138,31,.05), transparent);
+}
+
+/* --- Кнопки-варианты настроек как ряд предохранителей ------- */
+.optchip {
+  background:
+    linear-gradient(180deg, rgba(40,47,59,.4), rgba(16,20,27,.5));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), inset 0 -2px 4px rgba(0,0,0,.25);
+}
+.optchip--on {
+  background:
+    linear-gradient(180deg, rgba(255,138,31,.2), rgba(242,101,10,.08));
+}
+
+/* --- Верхняя панель: клёпаная стальная балка ---------------- */
+.topbar {
+  background:
+    linear-gradient(180deg, rgba(10,13,18,.85), rgba(10,13,18,.35)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.012) 0 1px, transparent 1px 5px);
+  border-bottom-color: rgba(120,134,156,.2);
+  box-shadow: 0 1px 0 rgba(0,0,0,.5), 0 4px 20px rgba(0,0,0,.3);
+}
+.topbar__mark {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,138,31,.25), transparent 70%),
+    linear-gradient(145deg, #2a323f, #12161d);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 0 14px rgba(255,138,31,.25);
+}
+
+/* --- Таймер как индикатор давления -------------------------- */
+.timer {
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255,138,31,.10), transparent 70%),
+    linear-gradient(180deg, rgba(30,36,46,.6), rgba(12,15,20,.7));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 -2px 5px rgba(0,0,0,.4);
+}
+
+/* --- Бейдж ведущего как выштампованный жетон ---------------- */
+.badge--host {
+  background:
+    linear-gradient(180deg, rgba(255,138,31,.18), rgba(242,101,10,.06));
+  box-shadow: inset 0 1px 0 rgba(255,220,170,.2);
+}
+
+/* --- Гейбл-заголовок катастрофы: аварийная табличка --------- */
+.brief__name {
+  padding-left: var(--s-3);
+  border-left: 3px solid var(--c-alarm);
+}
+
+/* --- Уважение к настройке уменьшенной анимации ------------- */
+body.no-motion .pcard--turn::before { animation: none; }

@@ -266,3 +266,79 @@ body.perf-lite .bg__veil { backdrop-filter: none; -webkit-backdrop-filter: none;
 /* Вкладка не видна — гасим анимации, чтобы не жечь батарею */
 body.bg-paused .bg *,
 body.bg-paused .bg { animation-play-state: paused !important; }
+
+/* ============================================================
+   РЕДИЗАЙН: БЕТОН, СТАЛЬ, ТРУБЫ
+   Дополнительные материальные слои поверх базового фона.
+   Только CSS/SVG, всё оптимизировано под 60 FPS.
+   ============================================================ */
+
+/* Бетонная стена: неровная поверхность с пятнами и подтёками */
+.bg__concrete {
+  background-image:
+    /* пятна сырости */
+    radial-gradient(60% 40% at 15% 20%, rgba(20,26,34,.5), transparent 70%),
+    radial-gradient(50% 55% at 85% 75%, rgba(16,20,28,.55), transparent 72%),
+    radial-gradient(40% 30% at 60% 10%, rgba(30,26,22,.35), transparent 70%),
+    /* крупное зерно бетона */
+    repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(28deg, rgba(0,0,0,.10) 0 3px, transparent 3px 9px);
+  mask-image: radial-gradient(135% 100% at 50% 40%, #000 55%, transparent 92%);
+  -webkit-mask-image: radial-gradient(135% 100% at 50% 40%, #000 55%, transparent 92%);
+  opacity: .7;
+}
+
+/* Трубопроводы вдоль стен: вертикальные магистрали по краям кадра.
+   Нарисованы градиентами — металлический блик по центру каждой трубы. */
+.bg__pipes {
+  background-repeat: no-repeat;
+  background-image:
+    /* левая толстая труба */
+    linear-gradient(90deg, transparent 3.2%, rgba(40,47,58,.9) 3.4%,
+      rgba(92,104,122,.5) 4.4%, rgba(24,29,37,.95) 5.6%, transparent 5.8%),
+    /* левая тонкая труба */
+    linear-gradient(90deg, transparent 7%, rgba(34,40,50,.8) 7.1%,
+      rgba(78,88,104,.4) 7.7%, rgba(20,25,32,.85) 8.4%, transparent 8.5%),
+    /* правая толстая труба */
+    linear-gradient(90deg, transparent 94.2%, rgba(40,47,58,.9) 94.4%,
+      rgba(92,104,122,.5) 95.4%, rgba(24,29,37,.95) 96.6%, transparent 96.8%),
+    /* правая тонкая труба */
+    linear-gradient(90deg, transparent 91.5%, rgba(34,40,50,.8) 91.6%,
+      rgba(78,88,104,.4) 92.2%, rgba(20,25,32,.85) 92.9%, transparent 93%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  opacity: .55;
+}
+
+/* Хомуты-крепления на трубах — горизонтальные утолщения */
+.bg__pipes::before,
+.bg__pipes::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 100%;
+  background-repeat: repeat-y;
+  background-image: repeating-linear-gradient(180deg,
+    transparent 0 118px,
+    rgba(60,68,82,.6) 118px 126px,
+    rgba(14,18,24,.7) 126px 130px,
+    transparent 130px 132px);
+  mask-image: linear-gradient(90deg, #000 0 6%, transparent 9% 91%, #000 94% 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0 6%, transparent 9% 91%, #000 94% 100%);
+  opacity: .5;
+}
+.bg__pipes::after { animation: pipe-drip 9s var(--e-inout) infinite; }
+
+/* Редкая капля-блик, стекающая по трубе */
+@keyframes pipe-drip {
+  0%, 92%, 100% { opacity: .5; }
+  95%           { opacity: .8; }
+}
+
+/* На телефоне трубы и бетон облегчаем ради 60 FPS */
+@media (max-width: 720px) {
+  .bg__pipes { opacity: .35; }
+  .bg__concrete { opacity: .5; }
+}
+body.perf-lite .bg__pipes,
+body.perf-lite .bg__concrete { display: none; }

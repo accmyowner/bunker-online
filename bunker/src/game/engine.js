@@ -76,22 +76,21 @@ export const VOTE_TIME_OPTIONS = [
 /**
  * Режим длительности задаёт, сколько характеристик успеют раскрыть,
  * прежде чем начнётся финальная серия голосований.
- * Значение — доля карт от общего числа (11).
  */
-export const END_MODE_OPTIONS = [
-  { value: 'short', label: 'Короткая партия', desc: 'Раскрывается около половины характеристик, затем финальное голосование' },
-  { value: 'long',  label: 'Длинная партия',  desc: 'Раскрываются почти все характеристики, затем финальное голосование' }
+export const REVEAL_COUNT_OPTIONS = [
+  { value: 2, label: 'После 2' },
+  { value: 3, label: 'После 3' },
+  { value: 4, label: 'После 4' },
+  { value: 5, label: 'После 5' },
+  { value: 0, label: 'После полного раскрытия' }
 ];
-
-/** Доля карт, которую нужно раскрыть до финала, по режимам */
-const REVEAL_TARGET = { short: 0.55, long: 0.9 };
 
 /** Настройки времени по умолчанию — применяются, если ведущий ничего не менял */
 export const DEFAULT_TIMING = {
   turnSeconds: 45,
   discussSeconds: 120,
   voteSeconds: 60,
-  endMode: 'long'
+  revealCount: 4        // после скольких раскрытых характеристик начинается голосование
 };
 
 /** Достаёт настройки времени из комнаты, подставляя значения по умолчанию */
@@ -101,7 +100,7 @@ export function timing(room) {
     turnSeconds:    s.turnSeconds    ?? DEFAULT_TIMING.turnSeconds,
     discussSeconds: s.discussSeconds ?? DEFAULT_TIMING.discussSeconds,
     voteSeconds:    s.voteSeconds    ?? DEFAULT_TIMING.voteSeconds,
-    endMode:        s.endMode        ?? DEFAULT_TIMING.endMode
+    revealCount:    s.revealCount    ?? DEFAULT_TIMING.revealCount
   };
 }
 
@@ -306,9 +305,17 @@ export function revealDone(room) {
   const alive = alivePlayers(room);
   const seats = room.game.bunker.seats;
   if (alive.length <= seats) return true;
-  if (revealedFraction(room) >= 1) return true;
-  const target = REVEAL_TARGET[timing(room).endMode] ?? REVEAL_TARGET.long;
-  return revealedFraction(room) >= target;
+  if (revealedFraction(room) >= 1) return true;   // больше нечего открывать
+
+  const target = timing(room).revealCount;
+  if (!target) return revealedFraction(room) >= 1; // 0 = до полного раскрытия
+
+  // Готовы к голосованию, когда каждый живой открыл target характеристик.
+  // Считаем по минимуму, чтобы никто не отставал.
+  const minOpened = Math.min(
+    ...alive.map((id) => Object.keys(room.game.chars[id]?.revealed || {}).length)
+  );
+  return minOpened >= target;
 }
 
 /**

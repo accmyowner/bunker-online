@@ -57,9 +57,9 @@ function run(count, settings) {
 
 console.log('=== Длинный режим ===');
 let allOk = true;
-for (const n of [3,4,5,6,8,10,12,16]) allOk = run(n, { endMode: 'long' }) && allOk;
+for (const n of [3,4,5,6,8,10,12,16]) allOk = run(n, { revealCount: 4 }) && allOk;
 console.log('\n=== Короткий режим ===');
-for (const n of [4,6,8,12]) allOk = run(n, { endMode: 'short' }) && allOk;
+for (const n of [4,6,8,12]) allOk = run(n, { revealCount: 2 }) && allOk;
 
 console.log(allOk ? '\nВСЕ ПРОВЕРКИ ПРОЙДЕНЫ' : '\nЕСТЬ ОШИБКИ');
 process.exit(allOk ? 0 : 1);
