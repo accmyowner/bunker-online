@@ -1,0 +1,133 @@
+/* ============================================================
+   СИСТЕМА ТЕМ ОФОРМЛЕНИЯ — 6 ПОЛНЫХ ТЕМ
+   Тема переопределяет акцентные токены из tokens.css и задаёт
+   свой цвет аварийного освещения фона. Компоненты ссылаются
+   на токены, поэтому смена темы перекрашивает весь интерфейс.
+
+   Тема личная: хранится в localStorage, не идёт через сеть.
+   ============================================================ */
+
+/* ---------- 🔴 RED ALERT (по умолчанию) --------------------
+   Чёрный, бордовый, красный неон. Тревога и опасность. */
+:root,
+[data-theme='red'] {
+  --c-void: #080506; --c-abyss: #0d0708; --c-graphite: #16090b;
+  --c-steel: #230e11; --c-steel-2: #331419; --c-rivet: #5a2b30;
+  --c-amber: #ff2b3d; --c-amber-hot: #ff4757; --c-orange: #c81028;
+  --c-alarm: #ff1e2d; --c-alarm-deep: #6e0410;
+  --c-cyan: #ff6b78; --c-cyan-deep: #7a1420;
+  --t-primary: #fff4f4; --t-secondary: #d3a6ab; --t-muted: #9a6a70; --t-dim: #5e3238;
+  --glass-bg: rgba(30,12,15,.55); --glass-bg-hi: rgba(46,18,22,.68);
+  --glass-brd: rgba(255,120,130,.12); --glass-brd-hi: rgba(255,43,61,.35);
+  --glow-amber: 0 0 0 1px rgba(255,43,61,.4), 0 0 26px rgba(255,43,61,.35);
+  --glow-alarm: 0 0 0 1px rgba(255,30,45,.5), 0 0 30px rgba(255,30,45,.4);
+  --glow-cyan:  0 0 0 1px rgba(255,107,120,.35), 0 0 24px rgba(255,107,120,.25);
+  --lamp-1: 255,30,45;   --lamp-2: 255,30,45;   --lamp-glow: 255,43,61;
+}
+
+/* ---------- 🔵 DEEP BUNKER ---------------------------------
+   Холодный синий, глубина затопленного реакторного отсека. */
+[data-theme='blue'] {
+  --c-void: #04070d; --c-abyss: #070c14; --c-graphite: #0c1420;
+  --c-steel: #12202f; --c-steel-2: #1a2d40; --c-rivet: #2f4a63;
+  --c-amber: #38bdf8; --c-amber-hot: #0ea5e9; --c-orange: #0369a1;
+  --c-alarm: #f43f5e; --c-alarm-deep: #7f1d2e;
+  --c-cyan: #67e8f9; --c-cyan-deep: #155e75;
+  --t-primary: #eef6fb; --t-secondary: #a3bccd; --t-muted: #6a8296; --t-dim: #3f5468;
+  --glass-bg: rgba(12,20,32,.55); --glass-bg-hi: rgba(18,32,47,.68);
+  --glass-brd: rgba(120,190,240,.12); --glass-brd-hi: rgba(56,189,248,.35);
+  --glow-amber: 0 0 0 1px rgba(56,189,248,.38), 0 0 26px rgba(56,189,248,.3);
+  --glow-alarm: 0 0 0 1px rgba(244,63,94,.5), 0 0 28px rgba(244,63,94,.35);
+  --glow-cyan:  0 0 0 1px rgba(103,232,249,.35), 0 0 24px rgba(103,232,249,.25);
+  --lamp-1: 14,165,233;  --lamp-2: 56,189,248;  --lamp-glow: 56,189,248;
+}
+
+/* ---------- 🟢 MILITARY ------------------------------------
+   Оливковый хаки, зелёные мониторы, армейский отсек. */
+[data-theme='green'] {
+  --c-void: #070a06; --c-abyss: #0b0f08; --c-graphite: #12180d;
+  --c-steel: #1c2414; --c-steel-2: #2a341d; --c-rivet: #4a5a32;
+  --c-amber: #a3e635; --c-amber-hot: #84cc16; --c-orange: #4d7c0f;
+  --c-alarm: #f59e0b; --c-alarm-deep: #713f12;
+  --c-cyan: #bef264; --c-cyan-deep: #3f6212;
+  --t-primary: #f3f7ec; --t-secondary: #b6c4a3; --t-muted: #79876a; --t-dim: #495440;
+  --glass-bg: rgba(18,24,13,.55); --glass-bg-hi: rgba(28,36,20,.68);
+  --glass-brd: rgba(163,230,53,.12); --glass-brd-hi: rgba(163,230,53,.32);
+  --glow-amber: 0 0 0 1px rgba(163,230,53,.35), 0 0 24px rgba(132,204,22,.28);
+  --glow-alarm: 0 0 0 1px rgba(245,158,11,.5), 0 0 26px rgba(245,158,11,.32);
+  --glow-cyan:  0 0 0 1px rgba(190,242,100,.32), 0 0 22px rgba(190,242,100,.24);
+  --lamp-1: 132,204,22;  --lamp-2: 77,124,15;   --lamp-glow: 163,230,53;
+}
+
+/* ---------- ⚫ DARK STEEL ----------------------------------
+   Почти чёрный, минимальная подсветка, строгий индустриал. */
+[data-theme='steel'] {
+  --c-void: #060708; --c-abyss: #0a0b0c; --c-graphite: #101315;
+  --c-steel: #191d21; --c-steel-2: #262b30; --c-rivet: #434c54;
+  --c-amber: #cbd5e1; --c-amber-hot: #94a3b8; --c-orange: #64748b;
+  --c-alarm: #ef4444; --c-alarm-deep: #7f1d1d;
+  --c-cyan: #e2e8f0; --c-cyan-deep: #475569;
+  --t-primary: #f1f5f9; --t-secondary: #aab6c3; --t-muted: #6b7784; --t-dim: #414b55;
+  --glass-bg: rgba(16,19,21,.6); --glass-bg-hi: rgba(25,29,33,.72);
+  --glass-brd: rgba(203,213,225,.1); --glass-brd-hi: rgba(203,213,225,.28);
+  --glow-amber: 0 0 0 1px rgba(203,213,225,.28), 0 0 20px rgba(148,163,184,.22);
+  --glow-alarm: 0 0 0 1px rgba(239,68,68,.5), 0 0 24px rgba(239,68,68,.3);
+  --glow-cyan:  0 0 0 1px rgba(226,232,240,.3), 0 0 18px rgba(226,232,240,.2);
+  --lamp-1: 148,163,184; --lamp-2: 100,116,139; --lamp-glow: 203,213,225;
+}
+
+/* ---------- 🟡 RUST ----------------------------------------
+   Ржавый металл, жёлтые лампы, старое заброшенное убежище. */
+[data-theme='rust'] {
+  --c-void: #0b0805; --c-abyss: #100b06; --c-graphite: #1a1109;
+  --c-steel: #26180d; --c-steel-2: #382413; --c-rivet: #6b4526;
+  --c-amber: #e8a13c; --c-amber-hot: #f0b429; --c-orange: #b45309;
+  --c-alarm: #dc6420; --c-alarm-deep: #7c2d12;
+  --c-cyan: #d97706; --c-cyan-deep: #78350f;
+  --t-primary: #f7efe2; --t-secondary: #c7ab89; --t-muted: #8a7050; --t-dim: #574230;
+  --glass-bg: rgba(26,17,9,.55); --glass-bg-hi: rgba(40,26,14,.68);
+  --glass-brd: rgba(232,161,60,.14); --glass-brd-hi: rgba(240,180,41,.35);
+  --glow-amber: 0 0 0 1px rgba(240,180,41,.38), 0 0 26px rgba(217,119,6,.3);
+  --glow-alarm: 0 0 0 1px rgba(220,100,32,.5), 0 0 26px rgba(220,100,32,.32);
+  --glow-cyan:  0 0 0 1px rgba(217,119,6,.32), 0 0 22px rgba(180,83,9,.24);
+  --lamp-1: 240,180,41;  --lamp-2: 180,83,9;    --lamp-glow: 232,161,60;
+}
+
+/* ---------- 🟣 BIOHAZARD -----------------------------------
+   Фиолетово-зелёная лаборатория, тревожная научная атмосфера. */
+[data-theme='bio'] {
+  --c-void: #08060d; --c-abyss: #0c0913; --c-graphite: #130d1e;
+  --c-steel: #1d1330; --c-steel-2: #2b1d45; --c-rivet: #4a3170;
+  --c-amber: #a3ff4d; --c-amber-hot: #7fe030; --c-orange: #5a1e9c;
+  --c-alarm: #c026d3; --c-alarm-deep: #581c87;
+  --c-cyan: #22ffb0; --c-cyan-deep: #0f766e;
+  --t-primary: #f2f0fb; --t-secondary: #bcaed3; --t-muted: #7f6f9a; --t-dim: #4c3e68;
+  --glass-bg: rgba(29,19,48,.55); --glass-bg-hi: rgba(43,29,69,.68);
+  --glass-brd: rgba(163,255,77,.12); --glass-brd-hi: rgba(163,255,77,.32);
+  --glow-amber: 0 0 0 1px rgba(163,255,77,.35), 0 0 26px rgba(127,224,48,.3);
+  --glow-alarm: 0 0 0 1px rgba(192,38,211,.55), 0 0 30px rgba(192,38,211,.4);
+  --glow-cyan:  0 0 0 1px rgba(34,255,176,.35), 0 0 24px rgba(34,255,176,.26);
+  --lamp-1: 192,38,211;  --lamp-2: 127,224,48;  --lamp-glow: 163,255,77;
+}
+
+/* ---------- Освещение фона от темы --------------------------
+   Лампы фона берут цвет из токенов темы. */
+.lamp--red-l { background: radial-gradient(circle, rgba(var(--lamp-1),.42) 0%, transparent 68%) !important; }
+.lamp--red-r { background: radial-gradient(circle, rgba(var(--lamp-2),.38) 0%, transparent 68%) !important; }
+.lamp--amber { background: radial-gradient(circle, rgba(var(--lamp-glow),.28) 0%, transparent 62%) !important; }
+
+/* ---------- Управление живым фоном и эффектами --------------- */
+body.bg-off .bg__concrete, body.bg-off .bg__walls, body.bg-off .bg__pipes,
+body.bg-off .bg__vents, body.bg-off .bg__door, body.bg-off .bg__lamps,
+body.bg-off .bg__haze, body.bg-off .bg__dust, body.bg-off .bg__grain { display: none; }
+body.bg-off .bg { background: radial-gradient(120% 90% at 50% 40%, var(--c-abyss), var(--c-void)); }
+
+/* Интенсивность эффектов — множитель яркости свечения фона */
+body[data-fx='low']  .bg__lamps { opacity: .5; }
+body[data-fx='low']  .bg__dust,
+body[data-fx='low']  .bg__grain { display: none; }
+body[data-fx='high'] .bg__lamps { opacity: 1.15; }
+
+/* Скорость анимаций */
+body[data-anim-speed='slow'] { --d-fast: 210ms; --d-base: 390ms; --d-slow: 690ms; --d-door: 1350ms; }
+body[data-anim-speed='fast'] { --d-fast: 90ms;  --d-base: 160ms; --d-slow: 280ms; --d-door: 540ms; }

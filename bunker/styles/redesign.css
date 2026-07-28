@@ -70,11 +70,11 @@
 }
 .btn--primary {
   background:
-    linear-gradient(180deg, rgba(255,138,31,.32), rgba(242,101,10,.14)),
+    linear-gradient(180deg, rgba(255,43,61,.32), rgba(200,16,40,.14)),
     linear-gradient(180deg, rgba(46,54,67,.4), rgba(22,27,35,.4));
-  border-color: rgba(255,179,71,.5);
+  border-color: rgba(255,71,87,.5);
   box-shadow:
-    inset 0 1px 0 rgba(255,220,170,.35),
+    inset 0 1px 0 rgba(255,190,195,.35),
     inset 0 -2px 8px rgba(0,0,0,.35),
     var(--glow-amber), var(--sh-2);
 }
@@ -82,9 +82,9 @@
 /* Кнопки меню — как переключатели с гравировкой номера сектора */
 .btn--menu {
   background:
-    linear-gradient(90deg, rgba(255,138,31,.06), transparent 40%),
+    linear-gradient(90deg, rgba(255,43,61,.06), transparent 40%),
     linear-gradient(180deg, rgba(46,54,67,.45), rgba(18,22,29,.45));
-  border-left: 2px solid rgba(255,179,71,.35);
+  border-left: 2px solid rgba(255,71,87,.35);
 }
 .btn--menu:hover { border-left-color: var(--c-amber); }
 
@@ -140,7 +140,7 @@
 }
 .trait--revealed {
   background:
-    linear-gradient(180deg, rgba(255,138,31,.10), rgba(12,15,20,.5));
+    linear-gradient(180deg, rgba(255,43,61,.10), rgba(12,15,20,.5));
 }
 .trait--special.trait--revealed {
   background:
@@ -166,15 +166,15 @@
 /* --- Код комнаты как табло на гермодвери -------------------- */
 .codecard {
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(255,138,31,.08), transparent 60%),
+    radial-gradient(120% 90% at 50% 0%, rgba(255,43,61,.08), transparent 60%),
     linear-gradient(180deg, rgba(40,47,59,.4), rgba(16,20,27,.5)),
     var(--glass-bg);
 }
 .codecard__code {
   padding: var(--s-2) 0;
-  border-top: 1px solid rgba(255,179,71,.15);
-  border-bottom: 1px solid rgba(255,179,71,.15);
-  background: linear-gradient(180deg, transparent, rgba(255,138,31,.05), transparent);
+  border-top: 1px solid rgba(255,71,87,.15);
+  border-bottom: 1px solid rgba(255,71,87,.15);
+  background: linear-gradient(180deg, transparent, rgba(255,43,61,.05), transparent);
 }
 
 /* --- Кнопки-варианты настроек как ряд предохранителей ------- */
@@ -185,7 +185,7 @@
 }
 .optchip--on {
   background:
-    linear-gradient(180deg, rgba(255,138,31,.2), rgba(242,101,10,.08));
+    linear-gradient(180deg, rgba(255,43,61,.2), rgba(200,16,40,.08));
 }
 
 /* --- Верхняя панель: клёпаная стальная балка ---------------- */
@@ -198,15 +198,15 @@
 }
 .topbar__mark {
   background:
-    radial-gradient(circle at 50% 30%, rgba(255,138,31,.25), transparent 70%),
+    radial-gradient(circle at 50% 30%, rgba(255,43,61,.25), transparent 70%),
     linear-gradient(145deg, #2a323f, #12161d);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 0 14px rgba(255,138,31,.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 0 14px rgba(255,43,61,.25);
 }
 
 /* --- Таймер как индикатор давления -------------------------- */
 .timer {
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255,138,31,.10), transparent 70%),
+    radial-gradient(120% 100% at 50% 0%, rgba(255,43,61,.10), transparent 70%),
     linear-gradient(180deg, rgba(30,36,46,.6), rgba(12,15,20,.7));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 -2px 5px rgba(0,0,0,.4);
 }
@@ -214,8 +214,8 @@
 /* --- Бейдж ведущего как выштампованный жетон ---------------- */
 .badge--host {
   background:
-    linear-gradient(180deg, rgba(255,138,31,.18), rgba(242,101,10,.06));
-  box-shadow: inset 0 1px 0 rgba(255,220,170,.2);
+    linear-gradient(180deg, rgba(255,43,61,.18), rgba(200,16,40,.06));
+  box-shadow: inset 0 1px 0 rgba(255,190,195,.2);
 }
 
 /* --- Гейбл-заголовок катастрофы: аварийная табличка --------- */
@@ -226,3 +226,213 @@
 
 /* --- Уважение к настройке уменьшенной анимации ------------- */
 body.no-motion .pcard--turn::before { animation: none; }
+
+/* ============================================================
+   ЭКРАН НАСТРОЕК (Red Alert)
+   ============================================================ */
+.setrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.setrow:last-child { border-bottom: 0; }
+.setrow--stack { flex-direction: column; align-items: stretch; gap: var(--s-3); }
+.setrow__text { min-width: 0; }
+.setrow__name {
+  display: flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-md); color: var(--t-primary);
+}
+.setrow__emoji { font-size: 1.05em; filter: saturate(1.1); }
+.setrow__desc { font-size: var(--fs-xs); color: var(--t-muted); margin-top: 2px; line-height: 1.5; }
+
+/* Сетка тем */
+.themegrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+.themecard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: linear-gradient(180deg, rgba(40,20,24,.5), rgba(16,10,12,.6));
+  text-align: left;
+  transition: transform var(--d-fast) var(--e-out), border-color var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out);
+}
+.themecard:not(:disabled):hover { transform: translateY(-2px); border-color: var(--glass-brd-hi); }
+.themecard:disabled { opacity: .5; cursor: default; }
+.themecard--on {
+  border-color: var(--glass-brd-hi);
+  box-shadow: var(--glow-amber);
+}
+.themecard__swatch {
+  height: 34px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,.08);
+}
+/* Превью-палитра каждой темы */
+.themecard[data-theme-preview='red']   .themecard__swatch { background: linear-gradient(135deg, #ff2b3d, #6e0410 70%, #080506); }
+.themecard[data-theme-preview='blue']  .themecard__swatch { background: linear-gradient(135deg, #38bdf8, #155e75 70%, #04070d); }
+.themecard[data-theme-preview='green'] .themecard__swatch { background: linear-gradient(135deg, #a3e635, #3f6212 70%, #070a06); }
+.themecard[data-theme-preview='steel'] .themecard__swatch { background: linear-gradient(135deg, #cbd5e1, #475569 70%, #070809); }
+.themecard__name { font-family: var(--f-display); font-size: var(--fs-sm); letter-spacing: .04em; }
+.themecard__tag {
+  font-family: var(--f-mono); font-size: var(--fs-xxs);
+  letter-spacing: .1em; text-transform: uppercase; color: var(--t-muted);
+}
+.themecard--on .themecard__tag { color: var(--c-amber); }
+
+/* ============================================================
+   АВАРИЙНЫЙ РЕЖИМ ГОЛОСОВАНИЯ
+   Красное пульсирующее освещение + затемнение интерфейса.
+   ============================================================ */
+.voting-alert::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 5;                 /* над фоном, под интерфейсом */
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255,30,45,.2), transparent 55%),
+    radial-gradient(120% 80% at 50% 100%, rgba(255,30,45,.18), transparent 55%);
+  animation: alert-throb 1.4s var(--e-inout) infinite;
+}
+@keyframes alert-throb {
+  0%, 100% { opacity: .4; }
+  50%      { opacity: 1; }
+}
+/* Затемняем всё, кроме активной панели голосования */
+.voting-alert .stage > .screen > .screen__inner > .game > .game__aside { opacity: .45; transition: opacity var(--d-base); }
+.voting-alert .roster { opacity: .5; transition: opacity var(--d-base); }
+
+/* Экран голосования подсвечен красным */
+.voting-alert .vote { position: relative; }
+.votebtn { transition: transform var(--d-fast) var(--e-out), border-color var(--d-base), box-shadow var(--d-base); }
+.votebtn__count { text-shadow: 0 0 12px var(--c-alarm); }
+
+/* Плавный счётчик голосов */
+.votebtn__fill { transition: transform var(--d-slow) var(--e-out); }
+
+/* ============================================================
+   ЭКРАН ФИНАЛА
+   ============================================================ */
+.final__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--s-3);
+  margin: var(--s-5) 0;
+}
+.final__stat {
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: linear-gradient(180deg, rgba(255,43,61,.08), rgba(16,10,12,.5));
+  text-align: center;
+}
+.final__stat-num {
+  font-family: var(--f-display);
+  font-size: var(--fs-2xl);
+  color: var(--c-amber);
+  text-shadow: 0 0 18px rgba(255,43,61,.4);
+}
+.final__stat-label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-xxs);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--t-muted);
+  margin-top: 4px;
+}
+
+/* Появление меню — оркестрованный вход */
+.menu__hero { animation: hero-in var(--d-slow) var(--e-out) both; }
+.menu__nav { animation: hero-in var(--d-slow) var(--e-out) .12s both; }
+@keyframes hero-in {
+  from { opacity: 0; transform: translate3d(0, 20px, 0); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* ============================================================
+   ГРОМКОСТЬ — ПОЛЗУНКИ
+   ============================================================ */
+.slider__head { display: flex; align-items: center; justify-content: space-between; }
+.slider__pct { font-family: var(--f-mono); font-size: var(--fs-sm); color: var(--c-amber); }
+.slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; margin-top: var(--s-2);
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--c-orange), var(--c-amber));
+  outline: none;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--c-amber);
+  border: 2px solid rgba(0,0,0,.4);
+  box-shadow: var(--glow-amber);
+  cursor: pointer;
+}
+.slider::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--c-amber); border: 2px solid rgba(0,0,0,.4);
+  box-shadow: var(--glow-amber); cursor: pointer;
+}
+
+/* ============================================================
+   КАРТОЧКИ ТЕМ (6 штук, с описанием)
+   ============================================================ */
+.themegrid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.themecard {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+}
+.themecard__swatch {
+  width: 44px; height: 44px; flex: none;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.themecard__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.themecard__desc {
+  font-family: var(--f-body); font-size: var(--fs-xxs);
+  color: var(--t-muted); text-transform: none; letter-spacing: 0;
+}
+.themecard__check {
+  flex: none; width: 20px; height: 20px; color: var(--c-amber);
+}
+.themecard__check svg { width: 100%; height: 100%; }
+
+/* Превью-палитры всех шести тем */
+.themecard[data-theme-preview='red']   .themecard__swatch { background: linear-gradient(135deg, #ff2b3d, #6e0410 70%, #080506); }
+.themecard[data-theme-preview='blue']  .themecard__swatch { background: linear-gradient(135deg, #38bdf8, #155e75 70%, #04070d); }
+.themecard[data-theme-preview='green'] .themecard__swatch { background: linear-gradient(135deg, #a3e635, #3f6212 70%, #070a06); }
+.themecard[data-theme-preview='steel'] .themecard__swatch { background: linear-gradient(135deg, #cbd5e1, #475569 70%, #060708); }
+.themecard[data-theme-preview='rust']  .themecard__swatch { background: linear-gradient(135deg, #f0b429, #7c2d12 70%, #0b0805); }
+.themecard[data-theme-preview='bio']   .themecard__swatch { background: linear-gradient(135deg, #a3ff4d, #c026d3 55%, #08060d); }
+
+/* ============================================================
+   ДОП. НАСТРОЙКИ КОМФОРТА
+   ============================================================ */
+/* Тряска экрана при изгнании (если не отключена) */
+@keyframes screen-shake {
+  0%,100% { transform: translate3d(0,0,0); }
+  20% { transform: translate3d(-4px,2px,0); }
+  40% { transform: translate3d(4px,-2px,0); }
+  60% { transform: translate3d(-3px,-2px,0); }
+  80% { transform: translate3d(3px,2px,0); }
+}
+body:not(.no-shake) .shake { animation: screen-shake .5s var(--e-inout); }
+
+/* Меньше вспышек — гасим мигание аварийных ламп и голосования */
+body.reduce-flash .lamp--red-l,
+body.reduce-flash .lamp--red-r { animation: none !important; opacity: .5 !important; }
+body.reduce-flash .voting-alert::before { animation: none !important; opacity: .5 !important; }
+body.reduce-flash .timer--low { animation: none !important; }

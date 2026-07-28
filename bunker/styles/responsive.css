@@ -70,7 +70,7 @@
   .tab svg { width: 20px; height: 20px; }
   .tab[aria-current='true'] {
     color: var(--c-amber);
-    background: rgba(255,138,31,.10);
+    background: rgba(255,43,61,.10);
   }
 
   /* Меню: заголовок компактнее, кнопки во всю ширину */

@@ -35,8 +35,8 @@
   display: grid; place-items: center;
   width: 30px; height: 30px;
   border-radius: var(--r-xs);
-  border: 1px solid rgba(255,179,71,.35);
-  background: rgba(255,138,31,.10);
+  border: 1px solid rgba(255,71,87,.35);
+  background: rgba(255,43,61,.10);
   color: var(--c-amber);
 }
 .topbar__mark svg { width: 17px; height: 17px; }
@@ -95,7 +95,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 6px 30px rgba(242,101,10,.35));
+  filter: drop-shadow(0 6px 30px rgba(200,16,40,.35));
 }
 .menu__lead {
   max-width: 46ch;
@@ -145,7 +145,7 @@
   letter-spacing: .28em;
   text-indent: .28em;
   color: var(--c-amber);
-  text-shadow: 0 0 30px rgba(255,138,31,.55);
+  text-shadow: 0 0 30px rgba(255,43,61,.55);
   margin: var(--s-3) 0;
 }
 .codecard__hint { font-size: var(--fs-xs); color: var(--t-muted); }
@@ -174,7 +174,7 @@
   font-size: var(--fs-xs);
   letter-spacing: .16em;
 }
-.seat--you { border-color: rgba(255,179,71,.4); }
+.seat--you { border-color: rgba(255,71,87,.4); }
 .seat__name { font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .setting {
@@ -207,7 +207,7 @@
   color: var(--t-secondary);
   transition: all var(--d-fast) var(--e-out);
 }
-.stepper__btn:hover { color: var(--c-amber); border-color: rgba(255,179,71,.4); }
+.stepper__btn:hover { color: var(--c-amber); border-color: rgba(255,71,87,.4); }
 
 /* ============================================================
    ИГРОВОЙ ЭКРАН
@@ -263,7 +263,7 @@
 .gauge__fill {
   stroke: var(--c-amber);
   stroke-linecap: round;
-  filter: drop-shadow(0 0 6px rgba(255,138,31,.8));
+  filter: drop-shadow(0 0 6px rgba(255,43,61,.8));
   transition: stroke-dashoffset var(--d-slow) var(--e-out);
 }
 .gauge__num {
@@ -378,8 +378,8 @@
 .final__survivor {
   padding: var(--s-4);
   border-radius: var(--r-sm);
-  border: 1px solid rgba(255,179,71,.3);
-  background: linear-gradient(180deg, rgba(255,138,31,.12), transparent);
+  border: 1px solid rgba(255,71,87,.3);
+  background: linear-gradient(180deg, rgba(255,43,61,.12), transparent);
 }
 
 /* Левая колонка меню */

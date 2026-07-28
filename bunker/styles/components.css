@@ -23,8 +23,8 @@
   inset: 0 0 auto 0;
   height: 1px;
   background: linear-gradient(90deg,
-    transparent, rgba(255,179,71,.5) 20%, rgba(255,255,255,.3) 50%,
-    rgba(255,179,71,.5) 80%, transparent);
+    transparent, rgba(255,71,87,.5) 20%, rgba(255,255,255,.3) 50%,
+    rgba(255,71,87,.5) 80%, transparent);
   opacity: .6;
   border-radius: inherit;
 }
@@ -85,7 +85,7 @@
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--c-amber-hot) 26%, transparent),
     color-mix(in srgb, var(--c-orange) 12%, transparent));
-  border-color: rgba(255,179,71,.4);
+  border-color: rgba(255,71,87,.4);
   color: #fff;
   box-shadow: var(--glow-amber), var(--sh-2);
 }
@@ -144,7 +144,7 @@
 }
 .input::placeholder { color: var(--t-dim); }
 .input:focus-visible {
-  border-color: rgba(255,179,71,.55);
+  border-color: rgba(255,71,87,.55);
   box-shadow: var(--glow-amber);
   outline: none;
 }
@@ -181,7 +181,7 @@
 }
 .switch[aria-checked='true'] {
   background: color-mix(in srgb, var(--c-amber-hot) 28%, transparent);
-  border-color: rgba(255,179,71,.5);
+  border-color: rgba(255,71,87,.5);
 }
 .switch[aria-checked='true']::after {
   transform: translateX(22px);
@@ -205,10 +205,10 @@
   color: var(--t-secondary);
   white-space: nowrap;
 }
-.badge--amber { border-color: rgba(255,179,71,.4); color: var(--c-amber); }
+.badge--amber { border-color: rgba(255,71,87,.4); color: var(--c-amber); }
 .badge--alarm { border-color: rgba(255,59,48,.45); color: #ff8078; }
 .badge--cyan  { border-color: rgba(77,208,255,.4); color: var(--c-cyan); }
-.badge--host  { border-color: rgba(255,179,71,.45); color: var(--c-amber); }
+.badge--host  { border-color: rgba(255,71,87,.45); color: var(--c-amber); }
 
 .dot {
   width: 7px; height: 7px;
@@ -284,13 +284,13 @@
    свечение и пульсация притягивают взгляд к тому, что можно раскрыть. */
 .trait--actionable {
   cursor: pointer;
-  border-color: rgba(255,179,71,.45);
-  background: linear-gradient(180deg, rgba(255,138,31,.10), rgba(10,13,18,.6));
+  border-color: rgba(255,71,87,.45);
+  background: linear-gradient(180deg, rgba(255,43,61,.10), rgba(10,13,18,.6));
   animation: trait-invite 2.4s var(--e-inout) infinite;
 }
 @keyframes trait-invite {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,31,0); }
-  55%      { box-shadow: 0 0 0 3px rgba(255,138,31,.14), var(--glow-amber); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,43,61,0); }
+  55%      { box-shadow: 0 0 0 3px rgba(255,43,61,.14), var(--glow-amber); }
 }
 .trait--actionable::after {
   content: '';
@@ -304,14 +304,14 @@
   box-shadow: 0 0 8px var(--c-amber-hot);
 }
 .trait--actionable:hover {
-  border-color: rgba(255,179,71,.8);
+  border-color: rgba(255,71,87,.8);
   box-shadow: var(--glow-amber);
   transform: translateY(-2px);
   animation: none;
 }
 .trait--revealed {
-  border-color: rgba(255,179,71,.28);
-  background: linear-gradient(180deg, rgba(255,138,31,.09), rgba(10,13,18,.6));
+  border-color: rgba(255,71,87,.28);
+  background: linear-gradient(180deg, rgba(255,43,61,.09), rgba(10,13,18,.6));
 }
 .trait--special .trait__key { color: var(--c-cyan); }
 .trait--special.trait--revealed {
@@ -333,7 +333,7 @@
   overflow: hidden;
   transition: border-color var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out), opacity var(--d-slow) var(--e-out);
 }
-.pcard--self { border-color: rgba(255,179,71,.38); box-shadow: var(--glow-amber), var(--sh-2); }
+.pcard--self { border-color: rgba(255,71,87,.38); box-shadow: var(--glow-amber), var(--sh-2); }
 .pcard--turn { border-color: rgba(77,208,255,.5); box-shadow: var(--glow-cyan), var(--sh-2); }
 .pcard--out  { opacity: .38; filter: grayscale(.75); }
 .pcard--out .pcard__head::after {
@@ -410,8 +410,8 @@
   display: grid; place-items: center;
   width: 30px; height: 30px; flex: none;
   border-radius: var(--r-xs);
-  background: rgba(255,138,31,.10);
-  border: 1px solid rgba(255,179,71,.2);
+  background: rgba(255,43,61,.10);
+  border: 1px solid rgba(255,71,87,.2);
   color: var(--c-amber);
 }
 .res__icon svg { width: 16px; height: 16px; }
@@ -445,7 +445,7 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--c-orange), var(--c-amber));
-  box-shadow: 0 0 10px rgba(255,138,31,.6);
+  box-shadow: 0 0 10px rgba(255,43,61,.6);
   transform-origin: left;
   animation: bar-grow var(--d-slow) var(--e-out) both;
 }
@@ -522,8 +522,8 @@
   display: grid; place-items: center;
   width: 32px; height: 32px; flex: none;
   border-radius: var(--r-xs);
-  background: rgba(255,138,31,.10);
-  border: 1px solid rgba(255,179,71,.2);
+  background: rgba(255,43,61,.10);
+  border: 1px solid rgba(255,71,87,.2);
   color: var(--c-amber);
 }
 .setblock__icon svg { width: 17px; height: 17px; }
@@ -543,12 +543,12 @@
   transition: all var(--d-fast) var(--e-out);
 }
 .optchip:not(:disabled):hover {
-  border-color: rgba(255,179,71,.4);
+  border-color: rgba(255,71,87,.4);
   color: var(--t-primary);
 }
 .optchip--on {
-  border-color: rgba(255,179,71,.55);
-  background: linear-gradient(180deg, rgba(255,138,31,.16), rgba(10,13,18,.5));
+  border-color: rgba(255,71,87,.55);
+  background: linear-gradient(180deg, rgba(255,43,61,.16), rgba(10,13,18,.5));
   color: var(--c-amber);
   box-shadow: var(--glow-amber);
 }
