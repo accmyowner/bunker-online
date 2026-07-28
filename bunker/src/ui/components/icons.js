@@ -8,6 +8,11 @@ const WRAP = (paths, extra = '') =>
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${paths}</svg>`;
 
 export const ICONS = {
+  chat:        WRAP('<path d="M4 5.5h16v10H8l-4 3.5V5.5Z"/>'),
+  send:        WRAP('<path d="M4 12 20 4l-4 16-4-7-8-1Z"/>'),
+  chevronRight: WRAP('<path d="M9 5l7 7-7 7"/>'),
+  trash:       WRAP('<path d="M5 7h14M10 7V5h4v2M6 7l1 13h10l1-13"/>'),
+
   /* --- Навигация и действия --- */
   play:     WRAP('<path d="M6 4.5v15l13-7.5-13-7.5Z"/>'),
   plus:     WRAP('<path d="M12 5v14M5 12h14"/>'),

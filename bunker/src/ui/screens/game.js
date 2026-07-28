@@ -10,6 +10,7 @@ import { on, emit, EV } from '../../core/bus.js';
 import { icon } from '../components/icons.js';
 import { confirm } from '../components/modal.js';
 import { playerCard, animateReveal } from '../components/card.js';
+import { mountSidePanel } from '../components/sidePanel.js';
 import { go } from '../router.js';
 import * as room from '../../net/room.js';
 import { play } from '../../audio/sfx.js';
@@ -655,9 +656,14 @@ export function gameScreen() {
     }
   }, 1000);
 
+  // Боковая панель с чатом и личными заметками. Живёт только на
+  // игровом экране: монтируется здесь, снимается в cleanup.
+  const unmountSide = mountSidePanel();
+
   wrap.cleanup = () => {
     off(); offLeft(); clearTimeout(pendingTimer); clearInterval(tick);
     document.body.classList.remove('voting-alert');
+    unmountSide();
   };
   return wrap;
 }
