@@ -10,6 +10,14 @@ import * as storage from '../core/storage.js';
 let ctx = null;
 let master = null;
 let enabled = storage.get('sound', true);
+let sfxVolume = storage.get('vol:sfx', 0.7);
+let masterVolume = storage.get('vol:master', 0.8);
+
+const BASE_GAIN = 0.32;   // опорная громкость, дальше масштабируется настройками
+
+function applyGain() {
+  if (master) master.gain.value = BASE_GAIN * sfxVolume * masterVolume;
+}
 
 function ensureContext() {
   if (ctx) return ctx;
@@ -17,7 +25,7 @@ function ensureContext() {
   if (!AudioCtx) return null;
   ctx = new AudioCtx();
   master = ctx.createGain();
-  master.gain.value = 0.22;
+  applyGain();
   master.connect(ctx.destination);
   return ctx;
 }
@@ -36,6 +44,22 @@ export function setEnabled(value) {
   if (enabled) unlock();
   return enabled;
 }
+
+/** Громкость звуковых эффектов (0..1) */
+export function setSfxVolume(v) {
+  sfxVolume = Math.max(0, Math.min(1, v));
+  storage.set('vol:sfx', sfxVolume);
+  applyGain();
+}
+export function getSfxVolume() { return sfxVolume; }
+
+/** Общая громкость (0..1) — влияет и на эффекты, и на музыку */
+export function setMasterVolume(v) {
+  masterVolume = Math.max(0, Math.min(1, v));
+  storage.set('vol:master', masterVolume);
+  applyGain();
+}
+export function getMasterVolume() { return masterVolume; }
 
 /** Один тон с огибающей */
 function tone({ freq, type = 'sine', start = 0, duration = 0.12, gain = 0.5, sweepTo = null }) {
@@ -108,7 +132,11 @@ const VOICES = {
   seal:    () => { noise({ duration: 0.5, gain: 0.34, filterFreq: 320, q: .7 });
                    tone({ freq: 110, type: 'sine', duration: 0.7, gain: 0.30, sweepTo: 55 }); },
   win:     () => { [523, 659, 784, 1046].forEach((freq, index) =>
-                     tone({ freq, type: 'sine', start: index * 0.11, duration: 0.28, gain: 0.24 })); }
+                     tone({ freq, type: 'sine', start: index * 0.11, duration: 0.28, gain: 0.24 })); },
+  lose:    () => { [392, 330, 262, 196].forEach((freq, index) =>
+                     tone({ freq, type: 'sawtooth', start: index * 0.14, duration: 0.34, gain: 0.22, sweepTo: freq * 0.9 })); },
+  door:    () => { noise({ duration: 0.6, gain: 0.36, filterFreq: 260, q: .6 });
+                   tone({ freq: 90, type: 'sine', duration: 0.8, gain: 0.32, sweepTo: 45 }); }
 };
 
 /** Проигрывает звук по имени */

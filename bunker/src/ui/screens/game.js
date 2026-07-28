@@ -326,6 +326,8 @@ function resultPanel(state) {
 function finalPanel(state) {
   const survivors = alivePlayers(state).map((id) => state.players[id]).filter(Boolean);
   const host = room.isHost(state);
+  const game = state.game;
+  const info = CATASTROPHE_BY_ID[game.catastropheId];
 
   const list = el('div.final__list');
   for (const player of survivors) {
@@ -335,14 +337,44 @@ function finalPanel(state) {
     ]));
   }
 
+  // Длительность партии
+  let duration = '—';
+  if (state.startedAt) {
+    const secs = Math.max(0, Math.round((Date.now() - state.startedAt) / 1000));
+    const mm = Math.floor(secs / 60);
+    const ss = secs % 60;
+    duration = mm > 0 ? `${mm} мин ${ss} с` : `${ss} с`;
+  }
+
+  const stats = el('div.final__stats', null, [
+    el('div.final__stat', null, [
+      el('div.final__stat-num', { text: String(survivors.length) }),
+      el('div.final__stat-label', { text: 'выжило' })
+    ]),
+    el('div.final__stat', null, [
+      el('div.final__stat-num', { text: String(game.round) }),
+      el('div.final__stat-label', { text: 'раундов' })
+    ]),
+    el('div.final__stat', null, [
+      el('div.final__stat-num', { text: String(game.eliminated.length) }),
+      el('div.final__stat-label', { text: 'изгнано' })
+    ]),
+    el('div.final__stat', null, [
+      el('div.final__stat-num', { text: duration }),
+      el('div.final__stat-label', { text: 'длительность' })
+    ])
+  ]);
+
   return el('div.panel.final', null, [
     el('div.eyebrow', { text: 'Гермозатвор запечатан' }),
     el('h1.final__title', { text: 'Бункер закрыт' }),
-    el('p.brief__text', {
-      text: 'Эти люди проведут вместе годы. Остальные остались там, где вы их оставили.'
-    }),
+    info ? el('p.brief__text', {
+      text: `Катастрофа: ${info.name}. Эти люди проведут вместе годы — остальные остались снаружи.`
+    }) : null,
+    stats,
+    el('div.eyebrow', { text: 'Состав убежища', style: { marginBottom: 'var(--s-3)' } }),
     list,
-    el('div', { style: { display: 'flex', gap: 'var(--s-3)', justifyContent: 'center', flexWrap: 'wrap' } }, [
+    el('div', { style: { display: 'flex', gap: 'var(--s-3)', justifyContent: 'center', flexWrap: 'wrap', marginTop: 'var(--s-5)' } }, [
       host ? el('button.btn.btn--primary', {
         onClick: async () => {
           const ok = await confirm({ title: 'Сыграть ещё?', text: 'Комната вернётся в лобби, состав сохранится.', ok: 'В лобби' });
@@ -428,10 +460,24 @@ export function gameScreen() {
       if (game.phase === PHASES.VOTE) play('vote');
       if (game.phase === PHASES.ENDED) play('win');
     }
+
+    // Аварийное красное освещение включается на время голосования
+    document.body.classList.toggle('voting-alert', game.phase === PHASES.VOTE);
+
     const justEliminated = game.lastEliminated && game.lastEliminated !== lastEliminated
       ? game.lastEliminated
       : null;
     if (justEliminated) play('eject');
+    // Лёгкая тряска экрана при изгнании, если не отключена в настройках
+    if (justEliminated && !document.body.classList.contains('no-shake')) {
+      const app = document.querySelector('.app');
+      if (app) {
+        app.classList.remove('shake');
+        void app.offsetWidth;         // перезапуск анимации
+        app.classList.add('shake');
+        setTimeout(() => app.classList.remove('shake'), 550);
+      }
+    }
     lastPhase = game.phase;
     lastEliminated = game.lastEliminated;
 
@@ -609,6 +655,9 @@ export function gameScreen() {
     }
   }, 1000);
 
-  wrap.cleanup = () => { off(); offLeft(); clearTimeout(pendingTimer); clearInterval(tick); };
+  wrap.cleanup = () => {
+    off(); offLeft(); clearTimeout(pendingTimer); clearInterval(tick);
+    document.body.classList.remove('voting-alert');
+  };
   return wrap;
 }

@@ -14,19 +14,19 @@ function doorSvg() {
 <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
     <radialGradient id="doorPlate" cx="50%" cy="42%" r="62%">
-      <stop offset="0%"   stop-color="#2b3340"/>
-      <stop offset="55%"  stop-color="#1a1f28"/>
-      <stop offset="100%" stop-color="#0d1016"/>
+      <stop offset="0%"   stop-color="#3a2024"/>
+      <stop offset="55%"  stop-color="#1e0d10"/>
+      <stop offset="100%" stop-color="#0d0708"/>
     </radialGradient>
     <linearGradient id="doorRim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#3d4757"/>
-      <stop offset="50%"  stop-color="#232a35"/>
-      <stop offset="100%" stop-color="#141922"/>
+      <stop offset="0%"   stop-color="#4a2429"/>
+      <stop offset="50%"  stop-color="#2a1216"/>
+      <stop offset="100%" stop-color="#170a0c"/>
     </linearGradient>
     <linearGradient id="seamGlow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#f2650a" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="#ffb347" stop-opacity=".9"/>
-      <stop offset="100%" stop-color="#f2650a" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#c81028" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#ff2b3d" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#c81028" stop-opacity="0"/>
     </linearGradient>
     <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="9" result="b"/>
@@ -37,10 +37,10 @@ function doorSvg() {
   <!-- Рама, утопленная в бетон -->
   <rect x="70" y="70" width="860" height="860" rx="60" fill="url(#doorRim)" opacity=".85"/>
   <rect x="70" y="70" width="860" height="860" rx="60" fill="none"
-        stroke="#454f60" stroke-width="2" opacity=".5"/>
+        stroke="#5a2b30" stroke-width="2" opacity=".5"/>
 
   <!-- Заклёпки по периметру рамы -->
-  <g fill="#4a5566" opacity=".75">
+  <g fill="#5a2b30" opacity=".75">
     ${Array.from({ length: 28 }, (_, i) => {
       const step = i / 28 * Math.PI * 2;
       const x = 500 + Math.cos(step) * 415;
@@ -51,8 +51,8 @@ function doorSvg() {
 
   <!-- Основная плита -->
   <circle cx="500" cy="500" r="380" fill="url(#doorPlate)"/>
-  <circle cx="500" cy="500" r="380" fill="none" stroke="#4c5768" stroke-width="3" opacity=".6"/>
-  <circle cx="500" cy="500" r="342" fill="none" stroke="#2c3441" stroke-width="14" opacity=".8"/>
+  <circle cx="500" cy="500" r="380" fill="none" stroke="#5a2b30" stroke-width="3" opacity=".6"/>
+  <circle cx="500" cy="500" r="342" fill="none" stroke="#2a1216" stroke-width="14" opacity=".8"/>
 
   <!-- Вертикальный шов: сюда бьёт свет аварийной лампы -->
   <rect class="door-seam" x="496" y="120" width="8" height="760"
@@ -60,8 +60,8 @@ function doorSvg() {
 
   <!-- Вращающееся запорное кольцо -->
   <g class="door-ring">
-    <circle cx="500" cy="500" r="250" fill="none" stroke="#3a4453" stroke-width="26"/>
-    <circle cx="500" cy="500" r="250" fill="none" stroke="#525e70" stroke-width="2" opacity=".7"/>
+    <circle cx="500" cy="500" r="250" fill="none" stroke="#3a1c20" stroke-width="26"/>
+    <circle cx="500" cy="500" r="250" fill="none" stroke="#6b3339" stroke-width="2" opacity=".7"/>
     ${Array.from({ length: 8 }, (_, i) => {
       const angle = i / 8 * Math.PI * 2;
       const x1 = 500 + Math.cos(angle) * 224;
@@ -70,7 +70,7 @@ function doorSvg() {
       const y2 = 500 + Math.sin(angle) * 276;
       return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}"
                     x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-                    stroke="#5d6a7d" stroke-width="9" stroke-linecap="round" opacity=".85"/>`;
+                    stroke="#7a3a41" stroke-width="9" stroke-linecap="round" opacity=".85"/>`;
     }).join('')}
     <!-- Спицы штурвала -->
     ${Array.from({ length: 5 }, (_, i) => {
@@ -78,16 +78,16 @@ function doorSvg() {
       const x = 500 + Math.cos(angle) * 210;
       const y = 500 + Math.sin(angle) * 210;
       return `<line x1="500" y1="500" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"
-                    stroke="#39424f" stroke-width="16" stroke-linecap="round"/>`;
+                    stroke="#2a1216" stroke-width="16" stroke-linecap="round"/>`;
     }).join('')}
-    <circle cx="500" cy="500" r="52" fill="#232a35" stroke="#5d6a7d" stroke-width="4"/>
-    <circle cx="500" cy="500" r="20" fill="#161b23"/>
+    <circle cx="500" cy="500" r="52" fill="#2a1216" stroke="#7a3a41" stroke-width="4"/>
+    <circle cx="500" cy="500" r="20" fill="#120708"/>
   </g>
 
   <!-- Смотровое окно и предупреждающая маркировка -->
-  <circle cx="500" cy="248" r="34" fill="#0a0d13" stroke="#4c5768" stroke-width="4"/>
-  <circle cx="500" cy="248" r="20" fill="#ff3b30" opacity=".18"/>
-  <g opacity=".35" fill="none" stroke="#ffb347" stroke-width="4">
+  <circle cx="500" cy="248" r="34" fill="#0a0d13" stroke="#5a2b30" stroke-width="4"/>
+  <circle cx="500" cy="248" r="20" fill="#ff1e2d" opacity=".28"/>
+  <g opacity=".35" fill="none" stroke="#ff2b3d" stroke-width="4">
     <path d="M420 760h160M440 792h120"/>
   </g>
 </svg>`;

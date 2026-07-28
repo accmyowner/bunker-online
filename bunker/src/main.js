@@ -12,6 +12,8 @@ import { initBackground } from './ui/components/background.js';
 import { initToasts, toast } from './ui/components/toast.js';
 import { mountShell, register, go } from './ui/router.js';
 import { bindGlobalSounds, isEnabled, setEnabled, unlock, play } from './audio/sfx.js';
+import { applyAllPrefs, getPref } from './ui/prefs.js';
+import { start as startAmbient } from './audio/ambient.js';
 import { icon } from './ui/components/icons.js';
 import * as room from './net/room.js';
 
@@ -23,8 +25,8 @@ import { settingsScreen } from './ui/screens/settings.js';
 
 /** Применяет пользовательские настройки к корню документа */
 function applyPreferences() {
-  if (storage.get('reduceMotion', false)) document.body.classList.add('no-motion');
-  if (storage.get('perfLite', false)) document.body.classList.add('perf-lite');
+  // Применяем сохранённые настройки оформления (тема, фон, анимации, скорость)
+  applyAllPrefs();
 }
 
 /** Кнопка звука в шапке переключает и меняет иконку */
@@ -79,7 +81,11 @@ async function boot() {
   register('settings', settingsScreen);
 
   // Первый жест разблокирует звук — требование браузеров
-  document.addEventListener('pointerdown', unlock, { once: true, passive: true });
+  // Первый жест разблокирует звук — требование браузеров
+  document.addEventListener('pointerdown', () => {
+    unlock();
+    if (getPref('ambient')) startAmbient();
+  }, { once: true, passive: true });
 
   // Сеть поднимаем параллельно с показом меню, чтобы не ждать CDN
   const netReady = room.init().catch((error) => {
