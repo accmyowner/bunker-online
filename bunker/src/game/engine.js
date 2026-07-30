@@ -90,7 +90,8 @@ export const DEFAULT_TIMING = {
   turnSeconds: 45,
   discussSeconds: 120,
   voteSeconds: 60,
-  revealCount: 4        // после скольких раскрытых характеристик начинается голосование
+  revealCount: 4,       // после скольких раскрытых характеристик начинается голосование
+  allowHide: false      // разрешено ли скрывать одну свою карту за игру
 };
 
 /** Достаёт настройки времени из комнаты, подставляя значения по умолчанию */
@@ -100,7 +101,8 @@ export function timing(room) {
     turnSeconds:    s.turnSeconds    ?? DEFAULT_TIMING.turnSeconds,
     discussSeconds: s.discussSeconds ?? DEFAULT_TIMING.discussSeconds,
     voteSeconds:    s.voteSeconds    ?? DEFAULT_TIMING.voteSeconds,
-    revealCount:    s.revealCount    ?? DEFAULT_TIMING.revealCount
+    revealCount:    s.revealCount    ?? DEFAULT_TIMING.revealCount,
+    allowHide:      s.allowHide      ?? DEFAULT_TIMING.allowHide
   };
 }
 
@@ -125,7 +127,39 @@ function buildCharacter(rng) {
       traits[key] = pick(rng, TRAIT_POOLS[key]);
     }
   }
+
+  // Согласуем возраст с профессией, чтобы не было нелепиц вроде
+  // «53 года, недавний выпускник». Диапазон подбираем тем же rng,
+  // поэтому генерация остаётся детерминированной для всех клиентов.
+  traits.age = `${coherentAge(rng, traits.profession)} лет`;
+
   return { traits, revealed: {} };
+}
+
+/** Возвращает возраст, логично сочетающийся с профессией */
+function coherentAge(rng, profession) {
+  const p = (profession || '').toLowerCase();
+  // Молодые: недавние выпускники и студенты
+  if (p.includes('выпускник') || p.includes('студент')) {
+    return intBetween(rng, 21, 27);
+  }
+  // Старшие: пенсионеры, ветераны, большой стаж
+  if (p.includes('пенси') || p.includes('ветеран')) {
+    return intBetween(rng, 60, AGE_RANGE.max);
+  }
+  if (p.includes('20 лет стажа') || p.includes('стажа')) {
+    return intBetween(rng, 40, 65);
+  }
+  if (p.includes('бывший военный') || p.includes('боевым опытом')) {
+    return intBetween(rng, 30, 55);
+  }
+  // Профессии, требующие долгого обучения — не моложе 26
+  if (p.includes('хирург') || p.includes('нейрохирург') || p.includes('профессор') ||
+      p.includes('кандидат наук') || p.includes('академик') || p.includes('доктор наук')) {
+    return intBetween(rng, 30, AGE_RANGE.max);
+  }
+  // Остальные — обычный взрослый диапазон
+  return intBetween(rng, 24, AGE_RANGE.max);
 }
 
 /** Собирает бункер: срок, запасы, помещения и одну странность */
@@ -180,6 +214,7 @@ export function buildGame(room) {
     activeIndex: 0,          // чей сейчас ход (индекс в order среди живых)
     phaseDeadline: null,     // метка времени конца текущей фазы (null = без таймера)
     finalVoting: false,      // идёт ли финальная серия голосований
+    revealBase: 0,           // сколько карт было открыто до текущей серии раскрытия
     chars,
     roundReveals: {},
     votes: {},
@@ -301,6 +336,15 @@ export function tally(room) {
  * если больше нечего открывать (все карты уже показаны) или если
  * живых уже столько же, сколько мест (голосовать не за кого).
  */
+/**
+ * Пора ли голосовать. Голосование наступает, когда в ТЕКУЩЕЙ серии
+ * раскрытия каждый живой открыл нужное число карт (revealCount).
+ *
+ * Порог отсчитывается от того, сколько карт уже было открыто до
+ * начала этой серии (game.revealBase). Поэтому после каждого
+ * голосования требуется новый полноценный круг раскрытий, а не
+ * мгновенный повтор голосования.
+ */
 export function revealDone(room) {
   const alive = alivePlayers(room);
   const seats = room.game.bunker.seats;
@@ -308,14 +352,19 @@ export function revealDone(room) {
   if (revealedFraction(room) >= 1) return true;   // больше нечего открывать
 
   const target = timing(room).revealCount;
-  if (!target) return revealedFraction(room) >= 1; // 0 = до полного раскрытия
+  const base = room.game.revealBase || 0;
 
-  // Готовы к голосованию, когда каждый живой открыл target характеристик.
-  // Считаем по минимуму, чтобы никто не отставал.
+  // Сколько карт открыл самый отстающий живой игрок
   const minOpened = Math.min(
     ...alive.map((id) => Object.keys(room.game.chars[id]?.revealed || {}).length)
   );
-  return minOpened >= target;
+
+  if (!target) {
+    // Режим «до полного раскрытия»: голосуем, когда открыто всё возможное
+    return revealedFraction(room) >= 1;
+  }
+  // Голосуем, когда с начала этой серии открыто ещё target карт
+  return (minOpened - base) >= target;
 }
 
 /**
@@ -359,6 +408,33 @@ export function reveal(room, playerId, traitKey) {
   };
 
   return { ok: true, patch };
+}
+
+/**
+ * Скрыть одну свою РАСКРЫТУЮ карту. Доступно один раз за игру и
+ * только если ведущий включил настройку allowHide. Скрытую карту
+ * другие игроки больше не видят, но владелец её видит. Механика
+ * голосования и раскрытия при этом не меняется.
+ */
+export function hideCard(room, playerId, traitKey) {
+  const game = room.game;
+  if (!timing(room).allowHide) return { ok: false, reason: 'Скрытие карт выключено' };
+  if (!isAlive(room, playerId)) return { ok: false, reason: 'Вы вне игры' };
+  const ch = game.chars[playerId];
+  if (!ch) return { ok: false, reason: 'Нет данных игрока' };
+  if (!ch.revealed?.[traitKey]) return { ok: false, reason: 'Эту карту ещё не открывали' };
+  if (ch.hidden?.[traitKey]) return { ok: false, reason: 'Карта уже скрыта' };
+  if (ch.hideUsed) return { ok: false, reason: 'Скрыть карту можно только один раз за игру' };
+
+  const name = room.players[playerId]?.name || 'Игрок';
+  return {
+    ok: true,
+    patch: {
+      [`game/chars/${playerId}/hidden/${traitKey}`]: true,
+      [`game/chars/${playerId}/hideUsed`]: true,
+      'game/log': game.log.concat(logEntry(`${name} скрыл одну свою характеристику.`, 'info')).slice(-60)
+    }
+  };
 }
 
 /**
@@ -571,6 +647,12 @@ export function resolveVote(room) {
  * Если живых больше, чем мест — следующее голосование (без раскрытия карт).
  * Если мест хватило — игра завершается.
  */
+/**
+ * Переход после результата голосования.
+ * Одно голосование за этап: если мест ещё не хватило, начинается
+ * НОВЫЙ круг раскрытия карт (а не второе голосование подряд).
+ * Игра заканчивается, только когда живых осталось = числу мест.
+ */
 export function nextRound(room) {
   const preview = room;
   if (isFinished(preview)) {
@@ -590,21 +672,30 @@ export function nextRound(room) {
     };
   }
 
-  // Ещё есть лишние — продолжаем финальную серию новым голосованием
+  // Мест ещё не хватило — возвращаемся к раскрытию карт новым кругом.
+  // Так между двумя голосованиями всегда есть этап карт и обсуждения.
   const round = preview.game.round + 1;
+  const aliveIds = alivePlayers(preview);
+  // База: сколько карт уже открыто (по отстающему). От неё отсчитываем новый круг.
+  const base = aliveIds.length
+    ? Math.min(...aliveIds.map((id) => Object.keys(preview.game.chars[id]?.revealed || {}).length))
+    : 0;
   return {
     ok: true,
     patch: {
       'game/round': round,
-      'game/phase': PHASES.VOTE,
-      'game/finalVoting': true,
-      'game/phaseDeadline': deadlineFor(timing(preview).voteSeconds),
+      'game/phase': PHASES.REVEAL,
+      'game/activeIndex': 0,
+      'game/phaseDeadline': null,
+      'game/roundReveals': {},
       'game/votes': {},
       'game/voteRound': 1,
       'game/candidates': null,
+      'game/finalVoting': false,
+      'game/revealBase': base,
       'game/lastEliminated': null,
       'game/log': preview.game.log.concat(
-        logEntry(`Следующее голосование. Осталось исключить ещё ${alivePlayers(preview).length - preview.game.bunker.seats}.`, 'alarm')
+        logEntry(`Раунд ${round}. Осталось исключить ещё ${aliveIds.length - preview.game.bunker.seats}. Открываем новую характеристику.`, 'info')
       ).slice(-60)
     }
   };

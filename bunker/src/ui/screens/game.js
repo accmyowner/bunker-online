@@ -18,7 +18,7 @@ import {
   PHASES, PHASE_META, revealsLeft, alivePlayers, isAlive, voteCandidates, tally,
   everyoneRevealed, everyoneVoted, reveal, startVote, castVote, resolveVote, nextRound,
   endTurn, onDeadline, activePlayer, isActiveTurn, turnOrder, secondsLeft, deadlinePassed,
-  advanceAfterDiscuss, revealDone
+  advanceAfterDiscuss, revealDone, hideCard, timing
 } from '../../game/engine.js';
 import { CATASTROPHE_BY_ID } from '../../data/catastrophes.js';
 
@@ -406,6 +406,7 @@ export function gameScreen() {
   let firstPaint = true;
   let holdUntil = 0;        // до этого момента не перерисовываем
   let pendingTimer = null;
+  let hideMode = false;     // включён ли режим скрытия своей карты
 
   /**
    * Отпечаток значимой части состояния.
@@ -455,6 +456,8 @@ export function gameScreen() {
     const game = state.game;
     const meId = room.identity().id;
     const host = room.isHost(state);
+    const allowHide = timing(state).allowHide;    // разрешено ли скрывать карту
+    const iAmOut = !isAlive(state, meId);          // я исключён → наблюдатель
 
     /* --- Звуковые и визуальные реакции на изменения --- */
     if (lastPhase && lastPhase !== game.phase) {
@@ -499,6 +502,43 @@ export function gameScreen() {
     clear(main);
     main.append(phaseBar(state));
 
+    // Пункт 3: баннер режима наблюдателя для исключённого игрока
+    if (iAmOut) {
+      const reason = game.lastEliminated === meId
+        ? 'Вас исключили последним голосованием.'
+        : 'Вы вне бункера.';
+      main.append(el('div.panel.observer', null, [
+        el('div.observer__badge', null, [el('span', { html: icon('eye') }), 'Режим наблюдателя']),
+        el('p.observer__text', {
+          text: `${reason} Ваши карты открыты ниже. Вы видите игру, голосования и раскрытия друзей до конца партии, но больше не голосуете и не действуете.`
+        })
+      ]));
+    }
+
+    // Пункт 4: кнопка «скрыть карту» — только если разрешено, я в игре
+    // и ещё не пользовался скрытием
+    const myChar = game.chars[meId];
+    const canHide = allowHide && !iAmOut && myChar && !myChar.hideUsed;
+    if (canHide) {
+      const hideBtn = el(`button.btn.btn--sm${hideMode ? '.btn--primary' : ''}`, {
+        'data-silent': true
+      }, [
+        el('span.btn__icon', { html: icon(hideMode ? 'eyeOff' : 'eye') }),
+        hideMode ? 'Выберите карту для скрытия…' : 'Скрыть одну карту'
+      ]);
+      hideBtn.addEventListener('click', () => { hideMode = !hideMode; paint(room.current()); });
+      main.append(el('div.hidebar', null, [
+        hideBtn,
+        hideMode
+          ? el('span.hidebar__hint', { text: 'Нажмите на любую свою открытую карту. Отменить — нажмите кнопку ещё раз.' })
+          : el('span.hidebar__hint', { text: 'Один раз за игру можно скрыть одну свою карту от других.' })
+      ]));
+    } else if (allowHide && !iAmOut && myChar?.hideUsed) {
+      main.append(el('div.hidebar', null, [
+        el('span.hidebar__used', null, [el('span', { html: icon('eyeOff') }), 'Вы уже скрыли одну карту'])
+      ]));
+    }
+
     // Карточки игроков
     const roster = el('div.roster');
     const order = game.order.filter((id) => state.players[id]);
@@ -525,6 +565,13 @@ export function gameScreen() {
           holdUntil = Date.now() + 680;
           animateReveal(tile, value);
           await send((fresh) => reveal(fresh, id, key));
+        },
+        // Режим скрытия активен только для своей карточки, если ведущий
+        // разрешил и игрок ещё не использовал скрытие
+        hideMode: mine && hideMode && allowHide && !game.chars[id]?.hideUsed && isAlive(state, id),
+        onHide: async (key) => {
+          const res = await send((fresh) => hideCard(fresh, id, key));
+          if (res) { hideMode = false; play('vote'); }
         },
         footer: buildCardFooter(state, id, mine, activeId)
       });

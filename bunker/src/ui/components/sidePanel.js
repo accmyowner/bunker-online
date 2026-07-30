@@ -118,12 +118,12 @@ export function mountSidePanel({ host = document.body } = {}) {
       ]));
     }
 
-    // Поле ввода
-    const input = el('textarea.chat__input', {
-      rows: '1', maxlength: String(CHAT_MAX_LEN),
-      placeholder: 'Сообщение… (Enter — отправить, Shift+Enter — новая строка)'
+    // Поле ввода — одна строка, без растягивания, минималистичное (как в UNO)
+    const input = el('input.chat__input', {
+      type: 'text', maxlength: String(CHAT_MAX_LEN),
+      placeholder: 'Написать сообщение...',
+      autocomplete: 'off'
     });
-    const counter = el('span.chat__counter', { text: `0/${CHAT_MAX_LEN}` });
     const sendBtn = el('button.chat__send', {
       'data-silent': true, html: icon('send'), title: 'Отправить'
     });
@@ -134,8 +134,6 @@ export function mountSidePanel({ host = document.body } = {}) {
       const res = await sendMessage(text);
       if (res.ok) {
         input.value = '';
-        counter.textContent = `0/${CHAT_MAX_LEN}`;
-        autosize();
         play('click');
       } else if (res.reason === 'rate') {
         emit(EV.TOAST, { text: 'Не так часто — подождите секунду', kind: 'info' });
@@ -146,17 +144,8 @@ export function mountSidePanel({ host = document.body } = {}) {
       }
     };
 
-    const autosize = () => {
-      input.style.height = 'auto';
-      input.style.height = Math.min(120, input.scrollHeight) + 'px';
-    };
-
-    input.addEventListener('input', () => {
-      counter.textContent = `${input.value.length}/${CHAT_MAX_LEN}`;
-      autosize();
-    });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
         e.preventDefault();
         doSend();
       }
@@ -165,7 +154,7 @@ export function mountSidePanel({ host = document.body } = {}) {
 
     const composer = el('div.chat__composer', null, [
       input,
-      el('div.chat__composer-side', null, [counter, sendBtn])
+      sendBtn
     ]);
 
     body.append(listWrap, composer);

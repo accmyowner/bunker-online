@@ -20,31 +20,41 @@ import { TRAIT_ORDER, TRAIT_LABELS } from '../../data/traits.js';
  * «уже раскрытой» и переставала быть кликабельной. Теперь клик
  * зависит только от actionable, а показ значения — только от visible.
  */
-export function traitTile({ key, value, visible, actionable, onReveal }) {
+export function traitTile({ key, value, visible, actionable, onReveal, hidden = false, hideable = false, onHide = null }) {
   const classes = [
     'button.trait',
-    visible ? 'trait--revealed' : 'trait--hidden',
+    (visible && !hidden) ? 'trait--revealed' : 'trait--hidden',
+    hidden ? 'trait--secret' : '',
     key === 'special' ? 'trait--special' : '',
-    actionable ? 'trait--actionable' : ''
+    actionable ? 'trait--actionable' : '',
+    hideable ? 'trait--hideable' : ''
   ].filter(Boolean).join('.');
+
+  // Скрытую карту владелец видит приглушённо, остальные — как «скрыто»
+  let shown;
+  if (hidden) shown = visible ? `${value}` : '· скрыто ·';
+  else shown = visible ? value : '— — — — —';
 
   const tile = el(classes, {
     type: 'button',
-    disabled: !actionable,
+    disabled: !(actionable || hideable),
     'data-key': key,
     'data-silent': true,
     'aria-label': `${TRAIT_LABELS[key]}: ${visible ? value : 'засекречено'}`
         + (actionable ? '. Нажмите, чтобы раскрыть остальным' : '')
+        + (hideable ? '. Нажмите, чтобы скрыть эту карту' : '')
   }, [
     el('span.trait__key', null, [
-      el('span', { html: icon(key) }),
+      el('span', { html: icon(hidden ? 'eyeOff' : key) }),
       TRAIT_LABELS[key]
     ]),
-    el('span.trait__val', { text: visible ? value : '— — — — —' })
+    el('span.trait__val', { text: shown })
   ]);
 
   if (actionable && onReveal) {
     tile.addEventListener('click', () => onReveal(key, tile));
+  } else if (hideable && onHide) {
+    tile.addEventListener('click', () => onHide(key, tile));
   }
   return tile;
 }
@@ -87,10 +97,13 @@ export function playerCard({
   isHost = false,
   quotaLeft = 0,
   onReveal = null,
+  hideMode = false,
+  onHide = null,
   footer = null
 }) {
   const traits = character?.traits || {};
   const revealedMap = character?.revealed || {};
+  const hiddenMap = character?.hidden || {};
 
   const card = el(`div.pcard${mine ? '.pcard--self' : ''}${out ? '.pcard--out' : ''}`, {
     'data-player': player.id
@@ -124,14 +137,19 @@ export function playerCard({
   const grid = el('div.pcard__traits');
   for (const key of TRAIT_ORDER) {
     const openedForAll = Boolean(revealedMap[key]);
+    const isHidden = Boolean(hiddenMap[key]);
     grid.append(traitTile({
       key,
       value: traits[key] || '—',
-      // Своё значение вижу всегда; чужое — только если раскрыто всем
-      visible: mine || openedForAll,
+      // Своё значение вижу всегда; чужое — только если раскрыто и не скрыто
+      visible: mine || (openedForAll && !isHidden),
       // Раскрыть можно свою, ещё не раскрытую карту, пока есть норма раунда
       actionable: mine && !openedForAll && quotaLeft > 0 && !out,
-      onReveal
+      onReveal,
+      hidden: isHidden,
+      // Скрыть можно свою уже раскрытую и ещё не скрытую карту (в режиме скрытия)
+      hideable: mine && hideMode && openedForAll && !isHidden && !out,
+      onHide
     }));
   }
   card.append(grid);

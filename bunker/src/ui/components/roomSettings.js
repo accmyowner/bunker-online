@@ -100,6 +100,21 @@ export function roomSettingsPanel() {
           current: t.revealCount, canEdit,
           onPick: (v) => writeSetting('revealCount', v)
         })
+      ]),
+
+      el('div.setblock', null, [
+        el('div.setblock__head', null, [
+          el('span.setblock__icon', { html: icon('eyeOff') }),
+          el('div', null, [
+            el('div.setblock__name', { text: 'Разрешить скрытие одной карты' }),
+            el('div.setblock__desc', { text: 'Каждый игрок сможет один раз за игру скрыть одну свою характеристику' })
+          ])
+        ]),
+        optionRow({
+          options: [{ value: true, label: 'Включено' }, { value: false, label: 'Выключено' }],
+          current: t.allowHide, canEdit,
+          onPick: (v) => writeSetting('allowHide', v)
+        })
       ])
     );
 

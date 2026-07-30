@@ -534,28 +534,26 @@ body.side-resizing { cursor: ew-resize; user-select: none; }
 
 .chat__composer {
   flex: none;
-  display: flex; gap: var(--s-2); align-items: flex-end;
+  display: flex; gap: var(--s-2); align-items: center;
   padding: var(--s-3);
   border-top: 1px solid var(--glass-brd);
 }
 .chat__input {
-  flex: 1; resize: none;
-  min-height: 40px; max-height: 120px;
-  padding: var(--s-2) var(--s-3);
-  border-radius: var(--r-sm);
+  flex: 1;
+  height: 40px;                 /* одна строка, без растягивания */
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
   border: 1px solid var(--glass-brd);
   background: rgba(0,0,0,.3);
   color: var(--t-primary);
   font-family: var(--f-body); font-size: var(--fs-sm);
-  line-height: 1.4;
 }
 .chat__input:focus { outline: none; border-color: var(--glass-brd-hi); }
-.chat__composer-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.chat__counter { font-family: var(--f-mono); font-size: var(--fs-xxs); color: var(--t-muted); }
 .chat__send {
+  flex: none;
   width: 40px; height: 40px;
   display: grid; place-items: center;
-  border-radius: var(--r-sm);
+  border-radius: 50%;
   border: 1px solid var(--glass-brd-hi);
   background: linear-gradient(180deg, rgba(var(--lamp-glow),.2), transparent);
   color: var(--c-amber);
@@ -638,4 +636,59 @@ body.side-resizing { cursor: ew-resize; user-select: none; }
 /* Сдвиг основного контента, когда панель открыта на ПК */
 @media (min-width: 861px) {
   body.has-side .app { padding-right: var(--side-shift, 0); transition: padding-right var(--d-base) var(--e-out); }
+}
+
+/* ============================================================
+   РЕЖИМ НАБЛЮДАТЕЛЯ (п.3)
+   ============================================================ */
+.observer {
+  padding: var(--s-4);
+  margin-bottom: var(--s-4);
+  border-color: var(--glass-brd-hi);
+  background: linear-gradient(180deg, rgba(var(--lamp-glow),.1), rgba(0,0,0,.2));
+}
+.observer__badge {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-family: var(--f-display); font-size: var(--fs-md);
+  color: var(--c-amber); letter-spacing: .04em; margin-bottom: var(--s-2);
+}
+.observer__badge svg { width: 18px; height: 18px; }
+.observer__text { font-size: var(--fs-sm); color: var(--t-secondary); line-height: 1.5; }
+
+/* ============================================================
+   СКРЫТИЕ КАРТЫ (п.4)
+   ============================================================ */
+.hidebar {
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  margin-bottom: var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-brd);
+  background: rgba(0,0,0,.2);
+}
+.hidebar__hint { font-size: var(--fs-xs); color: var(--t-muted); }
+.hidebar__used {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-sm); color: var(--t-secondary);
+}
+.hidebar__used svg { width: 16px; height: 16px; }
+
+/* Скрытая карта */
+.trait--secret {
+  opacity: .8;
+  border-style: dashed !important;
+  border-color: var(--glass-brd-hi) !important;
+}
+.trait--secret .trait__val { font-style: italic; color: var(--t-muted); }
+
+/* Карта, которую можно скрыть (режим скрытия активен) — подсвечиваем */
+.trait--hideable {
+  cursor: pointer;
+  border-color: var(--c-amber) !important;
+  box-shadow: var(--glow-amber);
+  animation: hideable-pulse 1.6s var(--e-inout) infinite;
+}
+@keyframes hideable-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--lamp-glow),.3); }
+  50%      { box-shadow: 0 0 0 4px rgba(var(--lamp-glow),0); }
 }
